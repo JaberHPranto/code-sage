@@ -1,20 +1,22 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Lato } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
   title: "Code Sage",
+
   description: "A tool of Github repo and PR analysis",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
+const lato = Lato({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  weight: ["400", "700"],
 });
 
 export default function RootLayout({
@@ -22,9 +24,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${geist.variable}`}>
+      <html lang="en" className={`${lato.className}`}>
         <body>
           <TRPCReactProvider>{children}</TRPCReactProvider>
+          <Toaster richColors />
         </body>
       </html>
     </ClerkProvider>
