@@ -3,6 +3,7 @@
 import { ExternalLink, Github } from "lucide-react";
 import Link from "next/link";
 import useProjects from "~/hooks/use-projects";
+import CommitLog from "./commit-log";
 
 const DashboardPage = () => {
   const { selectedProject } = useProjects();
@@ -43,7 +44,9 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      <div className="mt-8">CommitLog</div>
+      <div className="mt-8">
+        <CommitLog />
+      </div>
     </div>
   );
 };

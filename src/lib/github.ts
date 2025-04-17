@@ -10,14 +10,14 @@ export const octokit = new Octokit({
 
 interface Response {
   commitAuthorName: string;
-  commitAuthorAvatar: string;
+  commitAuthorAvatar: string | null;
   commitDate: string;
   commitMessage: string;
   commitHash: string;
 }
 
 export const pollCommits = async (projectId: string) => {
-  const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
+  const { githubUrl } = await fetchProjectGithubUrl(projectId);
   const commitHashes = await getCommitHashes(githubUrl);
   const unprocessedCommits = await filterUnprocessedCommits(
     projectId,
@@ -40,7 +40,6 @@ export const pollCommits = async (projectId: string) => {
   // save to db
   const commits = await db.commit.createMany({
     data: summaries.map((summary, index) => {
-      console.log("Processing commit: ", index + 1);
       return {
         projectId,
         commitMessage: unprocessedCommits[index]!.commitMessage,
@@ -88,8 +87,8 @@ export async function getCommitHashes(githubUrl: string): Promise<Response[]> {
 
   const sortedCommits = data?.sort((a: any, b: any) => {
     return (
-      new Date(b.commit.author.date).getTime() -
-      new Date(a.commit.author.date).getTime()
+      new Date(a.commit.author.date).getTime() -
+      new Date(b.commit.author.date).getTime()
     );
   });
 
