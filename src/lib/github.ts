@@ -10,7 +10,7 @@ export const octokit = new Octokit({
 
 interface Response {
   commitAuthorName: string;
-  commitAuthorAvatar: string | null;
+  commitAuthorAvatar: string;
   commitDate: string;
   commitMessage: string;
   commitHash: string;
@@ -87,8 +87,8 @@ export async function getCommitHashes(githubUrl: string): Promise<Response[]> {
 
   const sortedCommits = data?.sort((a: any, b: any) => {
     return (
-      new Date(a.commit.author.date).getTime() -
-      new Date(b.commit.author.date).getTime()
+      new Date(b.commit.author.date).getTime() -
+      new Date(a.commit.author.date).getTime()
     );
   });
 
@@ -137,5 +137,3 @@ export async function summarizeCommit(githubUrl: string, commitHash: string) {
     toast.error("Failed to fetch commit diff");
   }
 }
-
-// await pollCommits("b826a15a-2ec9-480a-9b56-870f8414a860");

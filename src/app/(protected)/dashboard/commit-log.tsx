@@ -28,7 +28,7 @@ const CommitLog = () => {
               <img
                 src={
                   Boolean(commit.commitAuthorAvatar)
-                    ? commit.commitAuthorAvatar
+                    ? (commit.commitAuthorAvatar as string)
                     : "https://github.com/vercel.png"
                 }
                 alt="Author"
