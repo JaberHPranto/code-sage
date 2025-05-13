@@ -27,8 +27,9 @@ const CreatePage = () => {
         githubToken: data.githubToken,
       },
       {
-        onSuccess: () => {
+        onSuccess: async (project) => {
           toast.success("Project created successfully");
+
           reset();
           refetch();
         },

@@ -25,14 +25,52 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      await indexGithubRepo(
-        (await project).id,
-        input.repoUrl,
-        input.githubToken,
-      );
-      // await pollCommits((await project).id);
+      await pollCommits((await project).id);
 
       return project;
+    }),
+  indexProjectRepo: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1),
+        repoUrl: z.string().min(1),
+        githubToken: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await indexGithubRepo(input.projectId, input.repoUrl, input.githubToken);
+
+      return true;
+    }),
+  pollProjectIndexingProgress: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const progress = ctx.db.indexingProgress.findUnique({
+        where: {
+          projectId: input.projectId,
+        },
+      });
+
+      return progress;
+    }),
+  getProjectIndexingStatus: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const progress = ctx.db.indexingProgress.findUnique({
+        where: {
+          projectId: input.projectId,
+        },
+      });
+
+      return (await progress)?.isFinished ?? false;
     }),
   getProjects: protectedProcedure.query(async ({ ctx }) => {
     const projects = ctx.db.project.findMany({

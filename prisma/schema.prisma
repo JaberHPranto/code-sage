@@ -43,6 +43,8 @@ model Project {
     Commit Commit[]
 
     SourceCodeEmbedding SourceCodeEmbedding[]
+
+    IndexingProgress IndexingProgress?
 }
 
 // User <-> Project (Many to Many)
@@ -89,4 +91,15 @@ model SourceCodeEmbedding {
 
     projectId String
     project Project @relation(fields: [projectId], references: [id])
+}
+
+model IndexingProgress {
+  projectId   String   @id @default(uuid())
+  currentStep Int
+  totalSteps  Int
+  isFinished  Boolean? @default(false)
+  
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
 }

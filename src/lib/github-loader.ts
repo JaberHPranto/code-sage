@@ -12,84 +12,350 @@ import { delay } from "~/utils/prompt-templates";
           -> getSummary(document.pageContent) -> getEmbedding(summary) -> store to pg vector
 */
 
+// export const loadGithubRepo = async (
+//   githubUrl: string,
+//   githubToken?: string,
+// ) => {
+//   const loader = new GithubRepoLoader(githubUrl, {
+//     accessToken: githubToken || process.env.GITHUB_TOKEN,
+//     branch: "main",
+//     ignoreFiles: [
+//       ".gitignore",
+//       "package-lock.json",
+//       "yarn.lock",
+//       "pnpm-lock.yaml",
+//       "bun.lockb",
+//       "*.md",
+//       "*.svg",
+//     ],
+//     recursive: true,
+//     maxConcurrency: 10,
+//     unknown: "warn",
+//   });
+
+//   const docs = await loader.load();
+
+//   return docs;
+// };
+
+import { Octokit } from "@octokit/rest";
+import { toast } from "sonner";
+
+interface FileDocument {
+  pageContent: string;
+  metadata: {
+    source: string;
+    name: string;
+  };
+}
+
+interface GithubLoaderOptions {
+  accessToken?: string;
+  branch?: string;
+  ignoreFiles?: string[];
+  maxConcurrency?: number;
+}
+
 export const loadGithubRepo = async (
   githubUrl: string,
   githubToken?: string,
-) => {
-  const loader = new GithubRepoLoader(githubUrl, {
-    accessToken: githubToken || process.env.GITHUB_TOKEN,
-    branch: "main",
-    ignoreFiles: [
-      ".gitignore",
-      "package-lock.json",
-      "yarn.lock",
-      "pnpm-lock.yaml",
-      "bun.lockb",
-      "*.md",
-      "*.svg",
-    ],
-    recursive: true,
-    maxConcurrency: 10,
-    unknown: "warn",
-  });
+): Promise<FileDocument[]> => {
+  const token = githubToken || process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error(
+      "GitHub token is required. Provide it as a parameter or set GITHUB_TOKEN environment variable.",
+    );
+  }
 
-  const docs = await loader.load();
+  const octokit = new Octokit({ auth: token });
 
+  // Parse GitHub URL to get owner and repo
+  const match = githubUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+  if (!match) throw new Error("Invalid GitHub URL");
+
+  const [, owner, repo] = match!;
+  const branch = "main";
+  const ignoredPatterns = [
+    // Files
+    ".gitignore",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "bun.lockb",
+    "*.svg",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.ico",
+    "*.lock",
+    "*.DS_Store",
+    "tsconfig.*",
+    "eslint.*",
+
+    // Folders
+    "node_modules",
+    ".next",
+    "public",
+    "dist",
+    "build",
+    "coverage",
+  ];
+
+  const docs: FileDocument[] = [];
+  const fetchedPaths = new Set<string>();
+  const concurrencyLimit = 10;
+  let activeTasks = 0;
+  const taskQueue: (() => Promise<void>)[] = [];
+
+  async function throttle<T>(fn: () => Promise<T>): Promise<T> {
+    if (activeTasks >= concurrencyLimit) {
+      // Wait for a task to be available
+      await new Promise<void>((resolve) => {
+        taskQueue.push(async () => resolve());
+      });
+    }
+
+    activeTasks++;
+    try {
+      return await fn();
+    } finally {
+      activeTasks--;
+      if (taskQueue.length > 0) {
+        const nextTask = taskQueue.shift();
+        if (nextTask) nextTask();
+      }
+    }
+  }
+
+  async function processDirectory(path = ""): Promise<void> {
+    let page = 1;
+    let hasMoreContent = true;
+
+    while (hasMoreContent) {
+      const { data } = await throttle(() =>
+        octokit.repos.getContent({
+          owner: owner!,
+          repo: repo!,
+          path,
+          ref: branch,
+          per_page: 100,
+          page,
+        }),
+      );
+
+      // Handle case when data is not an array (e.g., when path is a file)
+      if (!Array.isArray(data)) {
+        hasMoreContent = false;
+        continue;
+      }
+
+      if (data.length === 0) {
+        hasMoreContent = false;
+        continue;
+      }
+
+      const processingPromises: Promise<void>[] = [];
+
+      for (const item of data) {
+        // Skip ignored files
+        if (shouldIgnore(item.name, ignoredPatterns)) continue;
+
+        if (item.type === "dir") {
+          processingPromises.push(processDirectory(item.path));
+        } else if (item.type === "file") {
+          if (!fetchedPaths.has(item.path)) {
+            processingPromises.push(
+              (async () => {
+                try {
+                  const fileContent = await getFileContent(
+                    octokit,
+                    owner!,
+                    repo!,
+                    item.path,
+                    branch,
+                  );
+                  docs.push({
+                    pageContent: fileContent,
+                    metadata: {
+                      source: item.path,
+                      name: item.name,
+                    },
+                  });
+                  fetchedPaths.add(item.path);
+                } catch (error) {
+                  console.warn(`Error fetching file ${item.path}:`, error);
+                }
+              })(),
+            );
+          }
+        }
+      }
+
+      await Promise.all(processingPromises);
+
+      page++;
+
+      // If we got fewer items than the per_page limit, there are no more pages
+      hasMoreContent = data.length === 100;
+    }
+  }
+
+  if (owner && repo) {
+    await processDirectory();
+  }
   return docs;
 };
 
+function shouldIgnore(filename: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => {
+    if (pattern.includes("*")) {
+      const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*/g, ".*");
+      const regex = new RegExp(`^${regexPattern}$`);
+      return regex.test(filename);
+    }
+    return filename === pattern;
+  });
+}
+
+async function getFileContent(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  path: string,
+  branch: string,
+): Promise<string> {
+  const { data } = await octokit.repos.getContent({
+    owner,
+    repo,
+    path,
+    ref: branch,
+  });
+
+  if ("content" in data && "encoding" in data) {
+    if (data.encoding === "base64") {
+      return Buffer.from(data.content, "base64").toString("utf-8");
+    }
+    return data.content as string;
+  }
+
+  throw new Error(`Unable to get content for file: ${path}`);
+}
+
 export const indexGithubRepo = async (
-  // projectId: string,
+  projectId: string,
   githubUrl: string,
   githubToken?: string,
 ) => {
   const docs = await loadGithubRepo(githubUrl, githubToken);
-  const allEmbeddings = await generateEmbedding(docs);
+  for (let i = 0; i < docs.length; i++) {
+    try {
+      console.log(`Processing file ${i + 1} of ${docs.length}`);
+      await delay(4000);
+      const doc = docs[i];
+      const summary = await aiSummarizeSourceCode(doc!);
 
-  // save to db
-  // await Promise.allSettled(
-  //   allEmbeddings.map(async (embedding, index) => {
-  //     console.log(`processing ${index} of ${allEmbeddings.length}`);
+      await db.indexingProgress.upsert({
+        where: {
+          projectId,
+        },
+        update: {
+          currentStep: i + 1,
+          totalSteps: docs.length,
+          isFinished: i === docs.length - 1,
+        },
+        create: {
+          projectId,
+          currentStep: i + 1,
+          totalSteps: docs.length,
+          isFinished: false,
+        },
+      });
 
-  //     if (!embedding) return;
+      const embeddingValues = await generateCodeEmbedding(summary);
 
-  //     const sourceCodeEmbedding = await db.sourceCodeEmbedding.create({
-  //       data: {
-  //         projectId,
-  //         sourceCode: embedding.source,
-  //         fileName: embedding.fileName,
-  //         summary: embedding.summary,
-  //       },
-  //     });
+      if (!embeddingValues) {
+        throw new Error("Failed to generate embedding");
+      }
 
-  //     await db.$executeRaw`
-  //     UPDATE "SourceCodeEmbedding"
-  //     SET "summaryEmbedding" = ${embedding.embedding}::vector
-  //     WHERE "id" = ${sourceCodeEmbedding.id}
-  //     `;
-  //   }),
-  // );
+      const sourceCodeEmbedding = await db.sourceCodeEmbedding.create({
+        data: {
+          summary: summary,
+          sourceCode: JSON.parse(JSON.stringify(doc?.pageContent)),
+          fileName: doc?.metadata.source!,
+          projectId,
+        },
+      });
+
+      await db.$executeRaw`
+      UPDATE "SourceCodeEmbedding"
+      SET "summaryEmbedding" = ${embeddingValues} :: vector
+      WHERE "id" = ${sourceCodeEmbedding.id}
+      `;
+    } catch (error) {
+      console.error(`Error processing file ${i + 1}`, error);
+    }
+  }
 };
 
-const generateEmbedding = async (docs: Document[]) => {
-  return await Promise.all(
-    docs.map(async (doc, index) => {
-      console.log(`processing ${index + 1} ... `, doc.metadata.source);
-      const docSummary = await aiSummarizeSourceCode(doc);
-      console.log("🚀 ~ docSummary:", docSummary);
-      // const docEmbedding = await generateCodeEmbedding(docSummary);
+// export const indexGithubRepo = async (
+//   // projectId: string,
+//   githubUrl: string,
+//   githubToken?: string,
+// ) => {
+//   const docs = await loadGithubRepo(githubUrl, githubToken);
+//   docs.map((doc, index) => {
+//     console.log(`🚀 ~ doc: ${index + 1}`, doc.metadata.source);
+//   });
 
-      // return {
-      //   summary: docSummary,
-      //   embedding: docEmbedding,
-      //   source: JSON.parse(JSON.stringify(doc.pageContent)),
-      //   fileName: doc.metadata.source,
-      // };
-    }),
-  );
-};
+//   const allEmbeddings = await generateEmbedding(docs);
 
-console.log(
-  "GITHUB",
-  await indexGithubRepo("https://github.com/JaberHPranto/nextjs-boilerplate"),
-);
+//   // save to db
+//   // await Promise.allSettled(
+//   //   allEmbeddings.map(async (embedding, index) => {
+//   //     console.log(`processing ${index} of ${allEmbeddings.length}`);
+
+//   //     if (!embedding) return;
+
+//   //     const sourceCodeEmbedding = await db.sourceCodeEmbedding.create({
+//   //       data: {
+//   //         projectId,
+//   //         sourceCode: embedding.source,
+//   //         fileName: embedding.fileName,
+//   //         summary: embedding.summary,
+//   //       },
+//   //     });
+
+//   //     await db.$executeRaw`
+//   //     UPDATE "SourceCodeEmbedding"
+//   //     SET "summaryEmbedding" = ${embedding.embedding}::vector
+//   //     WHERE "id" = ${sourceCodeEmbedding.id}
+//   //     `;
+//   //   }),
+//   // );
+// };
+
+// const generateEmbedding = async (docs: Document[]) => {
+//   return await Promise.all(
+//     docs.map(async (doc, index) => {
+//       console.log(`processing ${index + 1} ... `, doc.metadata.source);
+//       // Implement throttling for Gemini API (15 requests per minute)
+//       await delay(1000); // Add 4-second delay between requests (60sec/15rpm ≈ 4sec)
+//       const docSummary = await aiSummarizeSourceCode(doc);
+//       console.log(`🚀 ~ docSummary: ${index + 1}`, docSummary);
+//       // const docEmbedding = await generateCodeEmbedding(docSummary);
+
+//       // return {
+//       //   summary: docSummary,
+//       //   embedding: docEmbedding,
+//       //   source: JSON.parse(JSON.stringify(doc.pageContent)),
+//       //   fileName: doc.metadata.source,
+//       // };
+//     }),
+//   );
+// };
+
+// console.log(
+//   "GITHUB",
+//   await indexGithubRepo("https://github.com/JaberHPranto/aurora-frontend"),
+// );`
