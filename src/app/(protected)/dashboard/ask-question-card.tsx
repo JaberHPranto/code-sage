@@ -4,6 +4,7 @@ import { readStreamableValue } from "ai/rsc";
 import { Bookmark } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -14,15 +15,13 @@ import {
 } from "~/components/ui/dialog";
 import { Textarea } from "~/components/ui/textarea";
 import useProjects from "~/hooks/use-projects";
+import useRefetch from "~/hooks/use-refetch";
 import { api } from "~/trpc/react";
 import { askQuestion } from "./action";
 import CodeReferences from "./code-references";
-import { toast } from "sonner";
 
 const AskQuestionCard = () => {
-  const [question, setQuestion] = useState(
-    "What are the filters used in this project?",
-  );
+  const [question, setQuestion] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fileReferences, setFileReferences] = useState<
@@ -36,6 +35,8 @@ const AskQuestionCard = () => {
   const [answer, setAnswer] = useState("");
 
   const { selectedProject } = useProjects();
+
+  const refetch = useRefetch();
 
   const saveAnswer = api.project.saveAnswer.useMutation();
 
@@ -75,6 +76,7 @@ const AskQuestionCard = () => {
       {
         onSuccess: () => {
           toast.success("Answer saved successfully");
+          refetch();
           setOpen(false);
         },
         onError: (err) => {

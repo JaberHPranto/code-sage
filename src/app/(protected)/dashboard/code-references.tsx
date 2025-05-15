@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { cn } from "~/lib/utils";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { materialDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { nord } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface Props {
   fileReferences: {
@@ -44,7 +44,7 @@ const CodeReferences = ({ fileReferences }: Props) => {
             value={file.fileName}
             className="max-h-[40vh] max-w-7xl overflow-scroll rounded-md"
           >
-            <SyntaxHighlighter language="typescript" style={materialDark}>
+            <SyntaxHighlighter language="typescript" style={nord}>
               {file.sourceCode}
             </SyntaxHighlighter>
           </TabsContent>
