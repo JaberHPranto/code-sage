@@ -1,4 +1,7 @@
 "use client";
+import MDEditor from "@uiw/react-md-editor";
+import { readStreamableValue } from "ai/rsc";
+import { Bookmark } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -11,10 +14,10 @@ import {
 } from "~/components/ui/dialog";
 import { Textarea } from "~/components/ui/textarea";
 import useProjects from "~/hooks/use-projects";
+import { api } from "~/trpc/react";
 import { askQuestion } from "./action";
-import { readStreamableValue } from "ai/rsc";
-import MDEditor from "@uiw/react-md-editor";
 import CodeReferences from "./code-references";
+import { toast } from "sonner";
 
 const AskQuestionCard = () => {
   const [question, setQuestion] = useState(
@@ -33,6 +36,8 @@ const AskQuestionCard = () => {
   const [answer, setAnswer] = useState("");
 
   const { selectedProject } = useProjects();
+
+  const saveAnswer = api.project.saveAnswer.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,15 +62,51 @@ const AskQuestionCard = () => {
     setLoading(false);
   };
 
+  const handleSaveAnswer = async () => {
+    if (!selectedProject?.id) return;
+
+    await saveAnswer.mutateAsync(
+      {
+        projectId: selectedProject.id,
+        question,
+        answer,
+        fileReferences,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Answer saved successfully");
+          setOpen(false);
+        },
+        onError: (err) => {
+          console.log(err);
+          toast.error("Failed to save answer");
+        },
+      },
+    );
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogHeader>
-          <DialogContent className="sm:max-w-7xl">
+        <DialogContent className="sm:max-w-7xl">
+          <DialogHeader>
             <DialogTitle>
-              <Image src="/logo.png" alt="logo" width={42} height={40} />
+              <div className="flex items-center gap-2">
+                <Image src="/logo.png" alt="logo" width={42} height={40} />
+                <Button
+                  onClick={() => handleSaveAnswer()}
+                  variant={"outline"}
+                  className="rounded-3xl !px-4"
+                  disabled={saveAnswer.isPending}
+                >
+                  <Bookmark className="size-3.5" />
+                  Save Answer
+                </Button>
+              </div>
             </DialogTitle>
+          </DialogHeader>
 
+          <div className="max-h-[90vh]">
             <div data-color-mode="light">
               <MDEditor.Markdown
                 source={answer}
@@ -74,17 +115,8 @@ const AskQuestionCard = () => {
             </div>
             <div className="h-4" />
             <CodeReferences fileReferences={fileReferences} />
-
-            <Button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-              }}
-            >
-              Close
-            </Button>
-          </DialogContent>
-        </DialogHeader>
+          </div>
+        </DialogContent>
       </Dialog>
       <Card className="relative col-span-3">
         <CardHeader>

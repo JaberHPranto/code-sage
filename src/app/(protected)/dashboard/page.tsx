@@ -42,7 +42,6 @@ const DashboardPage = () => {
   const refetch = useRefetch();
 
   const handleRepoIndexing = async () => {
-    // console.log("selectedProjectId", selectedProjectId);
     if (!selectedProject) return;
 
     try {

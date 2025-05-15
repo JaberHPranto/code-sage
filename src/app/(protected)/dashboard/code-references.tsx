@@ -14,7 +14,6 @@ interface Props {
 }
 
 const CodeReferences = ({ fileReferences }: Props) => {
-  console.log("FROM CODE REFERENCES", fileReferences);
   const [tab, setTab] = useState(fileReferences[0]?.fileName);
 
   if (fileReferences.length === 0) return null;

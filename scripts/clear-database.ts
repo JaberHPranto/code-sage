@@ -4,6 +4,7 @@ async function clearDatabase() {
   console.log("Clearing all database tables...");
 
   // Delete in reverse order of dependencies to avoid foreign key constraint errors
+  await db.question.deleteMany({});
   await db.sourceCodeEmbedding.deleteMany({});
   await db.indexingProgress.deleteMany({});
   await db.commit.deleteMany({});
