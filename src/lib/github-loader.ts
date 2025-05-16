@@ -1,6 +1,4 @@
 import { aiSummarizeSourceCode, generateCodeEmbedding } from "~/lib/gemini";
-import { GithubRepoLoader } from "@langchain/community/document_loaders/web/github";
-import type { Document } from "@langchain/core/documents";
 import { db } from "~/server/db";
 import { delay } from "~/utils/prompt-templates";
 
@@ -39,7 +37,6 @@ import { delay } from "~/utils/prompt-templates";
 // };
 
 import { Octokit } from "@octokit/rest";
-import { toast } from "sonner";
 
 interface FileDocument {
   pageContent: string;
@@ -49,11 +46,36 @@ interface FileDocument {
   };
 }
 
-interface GithubLoaderOptions {
-  accessToken?: string;
-  branch?: string;
-  ignoreFiles?: string[];
-  maxConcurrency?: number;
+interface FolderStructure {
+  [key: string]: FolderStructure | string;
+}
+
+export function buildFolderStructure(docs: FileDocument[]): FolderStructure {
+  const structure: FolderStructure = {};
+
+  for (const doc of docs) {
+    const pathParts = doc.metadata.source.split("/");
+    let currentLevel = structure;
+
+    // Navigate through the path parts to build nested structure
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i] as string;
+
+      // If we're at the file name (last part)
+      if (i === pathParts.length - 1) {
+        currentLevel[part] = "file";
+      } else {
+        // Create folder if it doesn't exist
+        if (!currentLevel[part]) {
+          currentLevel[part] = {};
+        }
+        // Move to next level
+        currentLevel = currentLevel[part] as FolderStructure;
+      }
+    }
+  }
+
+  return structure;
 }
 
 export const loadGithubRepo = async (
@@ -248,114 +270,68 @@ export const indexGithubRepo = async (
   githubToken?: string,
 ) => {
   const docs = await loadGithubRepo(githubUrl, githubToken);
-  for (let i = 0; i < docs.length; i++) {
-    try {
-      console.log(`Processing file ${i + 1} of ${docs.length}`);
-      await delay(4000);
-      const doc = docs[i];
-      const summary = await aiSummarizeSourceCode(doc!);
 
-      await db.indexingProgress.upsert({
-        where: {
-          projectId,
-        },
-        update: {
-          currentStep: i + 1,
-          totalSteps: docs.length,
-          isFinished: i === docs.length - 1,
-        },
-        create: {
-          projectId,
-          currentStep: i + 1,
-          totalSteps: docs.length,
-          isFinished: false,
-        },
-      });
+  // Build and log folder structure
+  const folderStructure = buildFolderStructure(docs);
+  console.log(
+    "Repository structure:",
+    JSON.stringify(folderStructure, null, 2),
+  );
 
-      const embeddingValues = await generateCodeEmbedding(summary);
+  // for (let i = 0; i < docs.length; i++) {
+  //   try {
+  //     console.log(`Processing file ${i + 1} of ${docs.length}`);
+  //     await delay(4000);
+  //     const doc = docs[i];
+  //     const summary = await aiSummarizeSourceCode(doc!);
 
-      if (!embeddingValues) {
-        throw new Error("Failed to generate embedding");
-      }
+  //     await db.indexingProgress.upsert({
+  //       where: {
+  //         projectId,
+  //       },
+  //       update: {
+  //         currentStep: i + 1,
+  //         totalSteps: docs.length,
+  //         isFinished: i === docs.length - 1,
+  //       },
+  //       create: {
+  //         projectId,
+  //         currentStep: i + 1,
+  //         totalSteps: docs.length,
+  //         isFinished: false,
+  //       },
+  //     });
 
-      const sourceCodeEmbedding = await db.sourceCodeEmbedding.create({
-        data: {
-          summary: summary,
-          sourceCode: JSON.parse(JSON.stringify(doc?.pageContent)),
-          fileName: doc?.metadata.source!,
-          projectId,
-        },
-      });
+  //     const embeddingValues = await generateCodeEmbedding(summary);
 
-      await db.$executeRaw`
-      UPDATE "SourceCodeEmbedding"
-      SET "summaryEmbedding" = ${embeddingValues} :: vector
-      WHERE "id" = ${sourceCodeEmbedding.id}
-      `;
-    } catch (error) {
-      console.error(`Error processing file ${i + 1}`, error);
-    }
-  }
+  //     if (!embeddingValues) {
+  //       throw new Error("Failed to generate embedding");
+  //     }
+
+  //     const sourceCodeEmbedding = await db.sourceCodeEmbedding.create({
+  //       data: {
+  //         summary: summary,
+  //         sourceCode: JSON.parse(JSON.stringify(doc?.pageContent)),
+  //         fileName: doc?.metadata.source!,
+  //         projectId,
+  //       },
+  //     });
+
+  //     await db.$executeRaw`
+  //     UPDATE "SourceCodeEmbedding"
+  //     SET "summaryEmbedding" = ${embeddingValues} :: vector
+  //     WHERE "id" = ${sourceCodeEmbedding.id}
+  //     `;
+  //   } catch (error) {
+  //     console.error(`Error processing file ${i + 1}`, error);
+  //   }
+  // }
 };
-
-// export const indexGithubRepo = async (
-//   // projectId: string,
-//   githubUrl: string,
-//   githubToken?: string,
-// ) => {
-//   const docs = await loadGithubRepo(githubUrl, githubToken);
-//   docs.map((doc, index) => {
-//     console.log(`🚀 ~ doc: ${index + 1}`, doc.metadata.source);
-//   });
-
-//   const allEmbeddings = await generateEmbedding(docs);
-
-//   // save to db
-//   // await Promise.allSettled(
-//   //   allEmbeddings.map(async (embedding, index) => {
-//   //     console.log(`processing ${index} of ${allEmbeddings.length}`);
-
-//   //     if (!embedding) return;
-
-//   //     const sourceCodeEmbedding = await db.sourceCodeEmbedding.create({
-//   //       data: {
-//   //         projectId,
-//   //         sourceCode: embedding.source,
-//   //         fileName: embedding.fileName,
-//   //         summary: embedding.summary,
-//   //       },
-//   //     });
-
-//   //     await db.$executeRaw`
-//   //     UPDATE "SourceCodeEmbedding"
-//   //     SET "summaryEmbedding" = ${embedding.embedding}::vector
-//   //     WHERE "id" = ${sourceCodeEmbedding.id}
-//   //     `;
-//   //   }),
-//   // );
-// };
-
-// const generateEmbedding = async (docs: Document[]) => {
-//   return await Promise.all(
-//     docs.map(async (doc, index) => {
-//       console.log(`processing ${index + 1} ... `, doc.metadata.source);
-//       // Implement throttling for Gemini API (15 requests per minute)
-//       await delay(1000); // Add 4-second delay between requests (60sec/15rpm ≈ 4sec)
-//       const docSummary = await aiSummarizeSourceCode(doc);
-//       console.log(`🚀 ~ docSummary: ${index + 1}`, docSummary);
-//       // const docEmbedding = await generateCodeEmbedding(docSummary);
-
-//       // return {
-//       //   summary: docSummary,
-//       //   embedding: docEmbedding,
-//       //   source: JSON.parse(JSON.stringify(doc.pageContent)),
-//       //   fileName: doc.metadata.source,
-//       // };
-//     }),
-//   );
-// };
 
 // console.log(
 //   "GITHUB",
-//   await indexGithubRepo("https://github.com/JaberHPranto/aurora-frontend"),
-// );`
+//   await indexGithubRepo(
+//     "11",
+//     "https://github.com/JaberHPranto/aurora-frontend",
+//   ),
+// );

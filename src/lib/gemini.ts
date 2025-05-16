@@ -6,9 +6,7 @@ import {
 } from "~/utils/prompt-templates";
 
 // const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const gemini = new GoogleGenerativeAI(
-  "AIzaSyD0_BtTE_BS2d7amuvOwqcDn00cv9Bi5vQ",
-);
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function aiSummarizeCommit(commitDiff: string) {

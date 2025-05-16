@@ -1,5 +1,6 @@
 "use client";
 import {
+  BookOpenText,
   Bot,
   CreditCard,
   LayoutDashboard,
@@ -38,9 +39,9 @@ const items = [
     icon: Bot,
   },
   {
-    title: "Meetings",
-    url: "/meetings",
-    icon: Presentation,
+    title: "Documentation",
+    url: "/documentation",
+    icon: BookOpenText,
   },
   {
     title: "Billing",

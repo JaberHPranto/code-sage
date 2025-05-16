@@ -145,4 +145,19 @@ export const projectRouter = createTRPCRouter({
 
       return questions;
     }),
+  getProjectSummary: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const summary = ctx.db.sourceCodeEmbedding.findMany({
+        where: {
+          projectId: input.projectId,
+        },
+      });
+
+      return summary;
+    }),
 });
