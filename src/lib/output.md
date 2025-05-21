@@ -1,708 +1,891 @@
 # Developer's Guide to Understanding and Contributing to Aurora
 
-Welcome to the Aurora project! This guide is designed to onboard new developers, providing a comprehensive overview of the project, its architecture, and the development workflow. By the end of this guide, you should have a solid understanding of the codebase and be ready to contribute effectively.
-
 ## 1. PROJECT OVERVIEW
 
-Aurora is a chat application designed to enhance research and information retrieval. It allows users to interact with an AI assistant to conduct deep research and generate responses tailored to their queries. The core functionality includes chat interfaces, filter options for refining search results, prompt template selection, and message history management.
+Aurora is a React-based web application designed to enhance chat experiences through advanced filtering, deep research integration, and prompt template management. Its primary vision is to provide users with a powerful chat studio environment where they can refine conversations, leverage AI-driven research, and streamline communication using pre-defined templates.
 
-Aurora aims to solve the problem of information overload by providing a structured and intelligent way to access and analyze data. It aims to streamline research workflows by providing an AI assistant that can understand user queries, filter relevant information, and generate comprehensive responses.
+Aurora solves the problem of information overload and inefficient communication by offering tools to filter chat messages based on various criteria (e.g., countries, agencies, diseases), seamlessly integrate deep research capabilities to provide context and insights, and enable the use of prompt templates to standardize and accelerate responses.
 
-The primary user base includes researchers, analysts, and anyone seeking efficient information retrieval. Use cases involve deep research on specific topics, data analysis using customizable filters, and generating insights from large datasets.
+The primary user base for Aurora includes researchers, analysts, and communicators who need to efficiently manage and extract insights from large volumes of chat data. Use cases range from market research and competitive analysis to internal communication optimization and knowledge management.
 
-**Tech Stack Overview:**
+The core tech stack includes:
 
-- **Frontend:** React, TypeScript, Redux Toolkit, Tailwind CSS, Shadcn UI, React Hook Form, Zod, Vite
-- **Backend (Assumed):** Node.js (implied by Dockerfile and package.json), likely using Express.js or similar framework to serve API endpoints used by the frontend.
-- **Other:** Docker, Nginx
+*   **Frontend:** React, TypeScript, Redux Toolkit, Tailwind CSS, Shadcn UI, React Router
+*   **Build Tool:** Vite
+*   **State Management:** Redux Toolkit
+*   **Styling:** Tailwind CSS
+*   **UI Components:** Shadcn UI
+*   **Routing:** React Router
+*   **API Interaction:** RTK Query
+*   **Validation:** Zod
+*   **Linting:** ESLint
+*   **Containers:** Docker, Docker Compose
 
 ## 2. SYSTEM ARCHITECTURE
 
-Here's a visual representation of Aurora's core architecture:
+### Architecture Diagram
 
 ```mermaid
 graph LR
     subgraph Frontend
-        A[React Components]
-        B[Redux Store]
-        C[API Services]
-        D[UI Components -Shadcn UI]
+        A[React Components] --> B(Redux Store)
+        B --> C{API Slice (RTK Query)}
+        A --> D[UI Components (Shadcn UI)]
+        A --> E[React Router]
+        E --> A
+
+        subgraph Chat Studio
+            F[Chat Interface] --> B
+            G[Filter Config Controller] --> B
+            H[Chat History] --> B
+        end
+
     end
 
-    subgraph BackendAssumed
-        E[Node.js API]
-        F[Database]
+    subgraph Backend
+        I[API Endpoints] --> J(Database)
+        I --> K[AI Services]
     end
 
-    subgraph ExternalDependencies
-        G[Vite]
-        H[Nginx]
-        I[Docker]
-    end
+    Frontend --> I
+    C --> I
 
-    A -- Redux Actions --> B
-    B -- State Updates --> A
-    A -- API Calls --> C
-    C -- Fetches Data --> E
-    E -- Queries --> F
-    F -- Returns Data --> E
-    E -- Sends Response --> C
-    C -- Processes Data --> B
-    A -- Uses --> D
-    Frontend -- Bundled By --> G
-    G -- Serves Static Assets --> H
-    I -- Containerizes --> H
-    I -- Containerizes --> E
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#ccf,stroke:#333,stroke-width:2px
+    style C fill:#ccf,stroke:#333,stroke-width:2px
+    style D fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#f9f,stroke:#333,stroke-width:2px
+    style F fill:#f9f,stroke:#333,stroke-width:2px
+    style G fill:#f9f,stroke:#333,stroke-width:2px
+    style H fill:#f9f,stroke:#333,stroke-width:2px
+    style I fill:#ffc,stroke:#333,stroke-width:2px
+    style J fill:#cff,stroke:#333,stroke-width:2px
+    style K fill:#cff,stroke:#333,stroke-width:2px
 
+    classDef internal fill:#f9f,stroke:#333,stroke-width:2px
+    classDef external fill:#ccf,stroke:#333,stroke-width:2px
+
+    class A,D,E,F,G,H internal;
+    class B,C external;
+    class I,J,K external;
 ```
 
 **Explanation:**
 
-1.  **Frontend (React Components):** The user interface, built with React, is the entry point for user interactions. It handles rendering, user input, and displaying data. Key components reside in `src/components` and `src/features`.
-2.  **Redux Store:** A centralized state management system using Redux Toolkit. It manages application state, including chat messages, side panel visibility, and filter configurations. Key slices are `chatMessagesSlice.ts` and `sidePanelSlice.ts`.
-3.  **API Services:** These services handle communication with the backend API. They abstract away the details of making HTTP requests and manage data fetching, caching, and error handling. Key files are `chatApi.ts`, `promptTemplateApi.ts`, and `filtersApi.ts`. RTK Query is heavily used here.
-4.  **UI Components (Shadcn UI):** A collection of reusable UI components, providing a consistent and styled user experience. Configuration is handled in `components.json`.
-5.  **Backend (Node.js API - Assumed):** The server-side application (details not available from provided files) is responsible for handling API requests, interacting with the database, and providing data to the frontend.
-6.  **Database (Assumed):** Persists application data, such as chat messages, user information, and filter configurations.
-7.  **Vite:** A build tool that bundles the frontend application for production and provides fast development with Hot Module Replacement (HMR). Configuration is in `vite.config.ts`.
-8.  **Nginx:** A web server that serves the static assets of the frontend application. Configuration is in `nginx.conf`.
-9.  **Docker:** A containerization platform that packages the application and its dependencies into a self-contained unit. Configuration is in `Dockerfile` and `docker-compose.yml`.
+1.  **Frontend:** The application is built with React, providing the UI components.
 
-**Understanding Check:** Can you identify the components responsible for rendering the chat interface and managing the application's state?
+2.  **Redux Store:** The Redux store manages application state, including chat messages, filter settings, and UI state.
 
-Here's a diagram of key data flows in the system:
+3.  **API Slice (RTK Query):** RTK Query handles API interactions, fetching data and managing caching. It's connected to the Redux store to manage the API states.
+
+4.  **UI Components (Shadcn UI):** Shadcn UI provides pre-built, styled UI components.
+
+5.  **React Router:** Handles navigation and routing within the application.
+
+6.  **Chat Studio:** This subgraph contains the main features: Chat Interface, Filter Config Controller, and Chat History. Each of these connects to the Redux store to access and modify the state.
+
+7.  **Backend:** The backend provides API endpoints that interact with a database and external AI services.
+
+8.  **Data Flow:** The frontend interacts with the backend API via RTK Query. The API fetches data from the database or AI services and returns it to the frontend, where it's displayed using React components.
+
+9.  **External Dependencies:** The application relies on a backend API, a database for storing data, and AI services for research.
+
+10. **Key Interfaces:** API Endpoints are a key interface between the frontend and backend.
+
+### Data Flow Diagram
 
 ```mermaid
 sequenceDiagram
     participant User
     participant ReactComponents as React Components
-    participant APIServices as API Services
-    participant BackendAPI as Backend API
+    participant ReduxStore as Redux Store
+    participant RTKQuery as RTK Query
+    participant APIEndpoints as API Endpoints
     participant Database
+    participant AIServices as AI Services
 
-    User->>ReactComponents: Enters Chat Message
-    ReactComponents->>ReduxStore: Dispatches 'addMessage' Action
-    ReduxStore->>ReduxStore: Updates Chat Message State
-    ReactComponents->>APIServices: Calls chatApi.addQueryMutation (or streaming)
-    APIServices->>BackendAPI: Sends API Request (/chat or /chat/stream)
-    BackendAPI->>Database: Queries Data (if needed, filters, etc.)
-    BackendAPI->>BackendAPI: AI processing / Deep Research (assumed)
-    BackendAPI->>APIServices: Returns Chat Response
-    APIServices->>ReduxStore: Dispatches 'updateMessage' Action (streaming might involve multiple updates)
-    ReduxStore->>ReduxStore: Updates Chat Message State
-    ReactComponents->>User: Renders Updated Chat Interface
+    User->>ReactComponents: Interacts with UI
+    ReactComponents->>ReduxStore: Dispatches actions (e.g., filter changes, new messages)
+    ReduxStore->>RTKQuery: State change triggers API request (if needed)
+    RTKQuery->>APIEndpoints: Makes API request
+    APIEndpoints->>Database: Queries data (e.g., chat history, filter options)
+    APIEndpoints->>AIServices: Requests AI research
+    AIServices->>APIEndpoints: Returns AI response
+    Database->>APIEndpoints: Returns data
+    APIEndpoints->>RTKQuery: Returns response
+    RTKQuery->>ReduxStore: Updates state with API data
+    ReduxStore->>ReactComponents: UI updates based on state changes
+    ReactComponents->>User: Displays updated information
 ```
 
 **Explanation:**
 
-1. **User Input:** The user enters a chat message through the React components.
-2. **Redux Update:** The `addMessage` action is dispatched to the Redux store, updating the chat message state.
-3. **API Call:** The React components call the appropriate API service (e.g., `chatApi.addQueryMutation`).
-4. **Backend Interaction:** The API service sends a request to the backend API (likely `/chat` or `/chat/stream`).
-5. **Data Processing:** The backend API processes the request, potentially querying data from the database, performing AI processing, or conducting deep research (depending on the nature of the request).
-6. **Response Handling:** The backend API returns the chat response to the API service.
-7. **State Update (Streaming):** The API service dispatches the `updateMessage` action to the Redux store, updating the chat message state. For streaming responses, this might happen multiple times as chunks of data arrive.
-8. **UI Update:** The React components render the updated chat interface, displaying the AI's response.
+1.  **User Interaction:** The user interacts with React components in the frontend.
+
+2.  **State Management:** React components dispatch actions to the Redux store when the user interacts with the UI (e.g., changing filters or sending a new message).
+
+3.  **API Requests:** Changes in the Redux store trigger API requests via RTK Query.
+
+4.  **Backend Interaction:** RTK Query sends requests to the backend API endpoints.
+
+5.  **Data Retrieval:** The API endpoints query the database for data (e.g., chat history or filter options) and/or request AI research from external AI services.
+
+6.  **Response Handling:** The API endpoints return data from the database and AI services to RTK Query.
+
+7.  **State Update:** RTK Query updates the Redux store with the received data.
+
+8.  **UI Update:** The UI updates based on the changes in the Redux store, displaying the updated information to the user.
+
+**Understanding Check:**
+
+*   What is the role of RTK Query in the architecture?
+*   How does the frontend communicate with the backend?
+*   What data is managed by the Redux store?
 
 ## 3. DEVELOPMENT ENVIRONMENT SETUP
 
-**Prerequisites:**
+### Prerequisites
 
-- Node.js (v18 or higher recommended)
-- pnpm (recommended package manager, install with `npm install -g pnpm`)
-- Docker (if you plan to use Docker for development)
-- Git
+*   **Node.js (>=18):** [https://nodejs.org/](https://nodejs.org/)
+*   **pnpm:** `npm install -g pnpm`
+*   **Docker:** [https://www.docker.com/](https://www.docker.com/) (Optional, for containerized development)
 
-**Configuration Instructions:**
+### Tools Installation
 
-1.  **Clone the Repository:**
+1.  **Install Node.js:** Download and install the latest LTS version of Node.js from the official website.
+2.  **Install pnpm:** Open your terminal or command prompt and run `npm install -g pnpm`.
+3.  **Install Docker:** If you plan to use Docker for development, download and install Docker Desktop from the official website.
+
+### Configuration Instructions
+
+1.  **Clone the repository:**
 
     ```bash
     git clone <repository_url>
     cd <repository_name>
     ```
 
-2.  **Install Dependencies:**
+2.  **Install dependencies:**
 
     ```bash
     pnpm install
     ```
 
-3.  **Environment Variables:**
+3.  **Environment variables:**
 
-    Create a `.env` file in the root directory. This file will contain environment-specific configurations, such as API keys and base URLs. The `docker-compose.yml` file is configured to read from this file. Refer to the `.env.example` or documentation for the required environment variables.
-
-    Example `.env` file:
+    *   Create a `.env` file in the root directory.
+    *   Add the following environment variables:
 
     ```
-    API_URL=http://localhost:8000
-    API_KEY=your_api_key
+    API_URL=http://localhost:8000 #backend URL
     ```
 
-4.  **Run the Development Server:**
+4.  **Run the development server:**
 
     ```bash
     pnpm dev
     ```
 
-    This command starts the Vite development server, which will automatically reload the application when you make changes to the code.
+    This will start the development server at `http://localhost:5173`.
 
-5.  **Docker Setup (Optional):**
+### Environment Variables and Configuration Files
 
-    If you want to use Docker for development, follow these steps:
+*   **.env:** Contains environment-specific configuration variables like API URLs and authentication keys.
 
-    1.  Build the Docker image:
+    ```
+    API_URL=http://localhost:8000
+    ```
 
-        ```bash
-        docker-compose build
-        ```
+*   **vite.config.ts:** Configures Vite, the build tool. It defines environment variables, aliases, and plugins.
 
-    2.  Run the Docker container:
+    ```typescript
+    import { defineConfig, loadEnv } from 'vite'
+    import react from '@vitejs/plugin-react'
+    import path from 'path'
 
-        ```bash
-        docker-compose up
-        ```
+    // https://vitejs.dev/config/
+    export default defineConfig(({ mode }) => {
+      const env = loadEnv(mode, process.cwd(), '')
+      return {
+        plugins: [react()],
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+          },
+        },
+        define: {
+          'process.env.API_URL': JSON.stringify(env.API_URL),
+        },
+      }
+    })
+    ```
 
-    This command starts the application in a Docker container, accessible at `http://localhost:3000`.
+*   **tailwind.config.js:** Configures Tailwind CSS, defining the theme, colors, and content files.
 
-**Verification Steps:**
+    ```javascript
+    /** @type {import('tailwindcss').Config} */
+    module.exports = {
+      darkMode: ["class"],
+      content: [
+        './pages/**/*.{ts,tsx}',
+        './components/**/*.{ts,tsx}',
+        './app/**/*.{ts,tsx}',
+        './src/**/*.{ts,tsx}',
+      ],
+      prefix: "",
+      theme: {
+        container: {
+          center: true,
+          padding: "2rem",
+          screens: {
+            "2xl": "1400px",
+          },
+        },
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            destructive: {
+              DEFAULT: "hsl(var(--destructive))",
+              foreground: "hsl(var(--destructive-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            accent: {
+              DEFAULT: "hsl(var(--accent))",
+              foreground: "hsl(var(--accent-foreground))",
+            },
+            popover: {
+              DEFAULT: "hsl(var(--popover))",
+              foreground: "hsl(var(--popover-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+          fontFamily: {
+            sans: ["var(--font-sans)", ...require("tailwindcss/defaultTheme").fontFamily.sans],
+            onest: ["Onest"],
+          },
+          keyframes: {
+            "accordion-down": {
+              from: { height: "0" },
+              to: { height: "var(--radix-accordion-content-height)" },
+            },
+            "accordion-up": {
+              from: { height: "var(--radix-accordion-content-height)" },
+              to: { height: "0" },
+            },
+          },
+          animation: {
+            "accordion-down": "accordion-down 0.2s ease-out",
+            "accordion-up": "accordion-up 0.2s ease-out",
+          },
+        },
+      },
+      plugins: [require("tailwindcss-animate")],
+    }
+    ```
 
-1.  **Development Server:** Open your browser and navigate to `http://localhost:5173` (or the port specified in the Vite configuration). You should see the Aurora application running.
-2.  **Docker Container:** Open your browser and navigate to `http://localhost:3000`. You should see the Aurora application running within the Docker container.
-3.  **Check API Connection:** Interact with the application and ensure that it can successfully fetch data from the backend API (check the network tab in your browser's developer tools).
+### Verification
 
-**Common Setup Issues and Solutions:**
+1.  Open your browser and navigate to `http://localhost:5173`.
+2.  Verify that the application loads correctly without any errors in the console.
+3.  Check if you can interact with the UI and navigate between different pages.
 
-- **Dependency Conflicts:** If you encounter dependency conflicts, try deleting the `node_modules` directory and running `pnpm install` again.
-- **Port Conflicts:** If the development server or Docker container fails to start due to port conflicts, try changing the port in the Vite configuration or `docker-compose.yml` file.
-- **Environment Variables:** Ensure that all required environment variables are defined in the `.env` file and that the application can access them.
-- **Vite Cache:** Sometimes Vite's cache can cause issues. Try clearing the cache by running `pnpm vite --force`.
+### Common Setup Issues and Solutions
+
+*   **Issue:** `pnpm install` fails with dependency errors.
+    *   **Solution:** Ensure you have the correct Node.js version installed. Try deleting `node_modules` and `pnpm-lock.yaml` and running `pnpm install` again.
+*   **Issue:** The application loads with a blank screen or console errors.
+    *   **Solution:** Check the `.env` file and `vite.config.ts` for correct configuration. Verify that the backend API is running and accessible.
+*   **Issue:** Tailwind CSS classes are not applied correctly.
+    *   **Solution:** Ensure that the `content` array in `tailwind.config.js` includes all relevant files. Restart the development server.
+
+**Understanding Check:**
+
+*   Where are environment variables defined?
+*   What is the purpose of `vite.config.ts`?
+*   How can you verify that the development environment is set up correctly?
 
 ## 4. CODEBASE WALKTHROUGH
 
-**Entry Points:**
+### Entry Points
 
-- **`index.html`:** The main HTML file that loads the React application.
-- **`src/main.tsx`:** The entry point for the React application. It renders the `App` component within the `<div id="root">` element.
-- **`src/App.tsx`:** The root component of the application, responsible for rendering the main layout and routing.
-- **`src/router/index.tsx`:** Configures the routing using React Router v6.
+*   **index.html:** The main HTML file that loads the application.
+*   **src/main.tsx:** The entry point for the React application, rendering the `App` component within the `<div id="root">` element in `index.html`.
 
-**Core Modules and Responsibilities:**
+### Core Modules and Responsibilities
 
-- **`src/components`:** Contains reusable UI components.
-- **`src/features`:** Contains feature-specific components and logic, such as the chat studio, chat history, and filter configurations.
-- **`src/libs/redux`:** Contains Redux store configuration and slices for managing application state.
-- **`src/router`:** Contains routing configuration and protected route components.
-- **`src/services`:** Contains API services for interacting with the backend.
-- **`src/types`:** Contains TypeScript type definitions for data structures used throughout the application.
-- **`src/utils`:** Contains utility functions for common tasks.
-- **`src/validators`:** Contains Zod schemas for validating data.
+*   **src/App.tsx:** The root component that initializes routing and renders the main layout.
+*   **src/router:** Contains routing configuration and protected route logic.
+*   **src/pages:** Contains page-level components (e.g., `ChatStudioPage`, `ApiKeyPage`, `NotFoundPage`).
+*   **src/features/chat-studio:** Contains modules related to the chat studio feature, including chat interface, history, and filter configuration.
+*   **src/libs/redux:** Manages application state using Redux Toolkit.
+*   **src/services:** Defines API endpoints and data fetching logic using RTK Query.
+*   **src/components:** Contains reusable UI components.
 
-**Important Design Patterns and Architectural Decisions:**
+### Important Design Patterns and Architectural Decisions
 
-- **Redux for State Management:** Redux is used to manage the application's state in a centralized and predictable way.
-- **RTK Query for Data Fetching:** RTK Query simplifies data fetching, caching, and state management.
-- **Tailwind CSS for Styling:** Tailwind CSS provides a utility-first approach to styling, enabling rapid UI development.
-- **Shadcn UI for UI Components:** Shadcn UI provides a collection of reusable UI components with a consistent look and feel.
-- **TypeScript for Type Safety:** TypeScript provides static typing, helping to catch errors early in the development process.
-- **Zod for Data Validation:** Zod is used to validate data, ensuring that it conforms to the expected format.
+*   **Redux for State Management:** Redux Toolkit is used for centralized state management, providing a predictable and scalable way to manage application state.
+*   **RTK Query for API Interaction:** RTK Query simplifies data fetching and caching, reducing boilerplate code and improving performance.
+*   **Tailwind CSS for Styling:** Tailwind CSS provides a utility-first approach to styling, enabling rapid UI development and consistent design.
+*   **Shadcn UI for UI Components:** Shadcn UI provides pre-built, accessible UI components, improving development speed and ensuring a consistent user experience.
+*   **Component-Based Architecture:** The application is built using a component-based architecture, promoting reusability and maintainability.
 
-**Directory Structure Rationale:**
+### Directory Structure Rationale
 
-The directory structure is organized by feature and module, making it easy to locate and understand the code. Feature-specific components and logic are grouped together in the `src/features` directory, while reusable UI components are located in the `src/components` directory.
+```
+├── Dockerfile
+├── components.json
+├── README.md
+├── package.json
+├── docker-compose.yml
+├── index.html
+├── postcss.config.js
+├── vite.config.ts
+├── tailwind.config.js
+├── nginx.conf
+└── src
+    ├── main.tsx
+    ├── App.tsx
+    ├── index.css
+    ├── vite-env.d.ts
+    ├── libs              # Libraries (Redux, Utils)
+    │   └── utils.ts
+    │   └── redux
+    │       ├── chatMessagesSlice.ts
+    │       ├── sidePanelSlice.ts
+    │       ├── store.ts
+    │       └── hooks.ts
+    ├── pages             # Page-level components
+    │   ├── ChatStudioPage.tsx
+    │   ├── ApiKeyPage.tsx
+    │   └── NotFoundPage.tsx
+    ├── hooks             # Custom React hooks
+    │   ├── useStreamingResponse.ts
+    │   └── useClickOutside.tsx
+    ├── types             # TypeScript type definitions
+    │   ├── common.ts
+    │   ├── prompt-template.ts
+    │   └── deep-research.ts
+    ├── router            # Routing configuration
+    │   ├── routes.tsx
+    │   ├── ProtectedRoute.tsx
+    │   └── index.tsx
+    ├── services          # API services
+    │   ├── chatApi.ts
+    │   ├── promptTemplateApi.ts
+    │   └── filters
+    │       └── filtersApi.ts
+    │   └── api
+    │       ├── apiSlice.ts
+    │       └── customFetchBase.ts
+    ├── utils             # Utility functions
+    │   ├── helpers.tsx
+    │   ├── data.ts
+    │   ├── parser.ts
+    │   └── index.ts
+    ├── components        # Reusable UI components
+    │   ├── hook-form
+    │   │   └── HookFormItem.tsx
+    │   ├── shared
+    │   │   ├── TypingLoadder.tsx
+    │   │   ├── TextSelectionWrapper.tsx
+    │   │   └── MarkdownContent.tsx
+    │   ├── spinner
+    │   │   └── index.tsx
+    │   └── ui            # Base UI components
+    │       ├── autosize-textarea.tsx
+    │       ├── accordion.tsx
+    │       ├── dialog.tsx
+    │       ├── card.tsx
+    │       ├── form.tsx
+    │       ├── popover.tsx
+    │       ├── select.tsx
+    │       ├── table.tsx
+    │       ├── textarea.tsx
+    │       ├── label.tsx
+    │       ├── separator.tsx
+    │       ├── button.tsx
+    │       ├── scroll-area.tsx
+    │       ├── calendar.tsx
+    │       └── input.tsx
+    ├── select
+    │   ├── SimpleSelect.tsx
+    │   └── MultiSelect.tsx
+    ├── validators        # Validation schemas
+    │   ├── authSchema.ts
+    │   └── filtersSchema.ts
+    └── features          # Feature-specific modules
+        └── chat-studio
+            ├── chat
+            │   ├── ChatInterface.tsx
+            │   ├── ChatMessage.tsx
+            │   ├── components
+            │   │   └── AiResponseAction.tsx
+            │   ├── custom-message
+            │   │   ├── DeepResearchMessage.tsx
+            │   │   └── components
+            │   │       ├── FinalAnswerSection.tsx
+            │   │       └── ResearchContent.tsx
+            │   └── prompt-template
+            │       └── PromptTemplateModal.tsx
+            ├── history
+            │   └── ChatHistory.tsx
+            └── filters
+                ├── TableView.tsx
+                └── FilterConfigController.tsx
+```
 
-**✅ PRACTICAL EXERCISE: Trace a request through the system**
+*   **src:** Contains all the application's source code.
+*   **components:** Reusable UI components, separated into `ui`, `shared`, and feature-specific components.
+*   **features:** Feature-specific modules, encapsulating all code related to a particular feature.
+*   **libs:** Utility functions and Redux store configuration.
+*   **pages:** Page-level components that define the application's routes.
+*   **services:** API services for interacting with the backend.
+*   **types:** TypeScript type definitions.
+*   **utils:** Helper functions and data.
 
-Imagine a user types "What are the latest treatments for Alzheimer's?" into the chat interface and hits send. Trace the flow of this request through the system, noting the key files and components involved. Document your findings.
+### PRACTICAL EXERCISE: Trace a Request Through the System
 
-1.  **User Input:** The user types the message into the `ChatInterface.tsx` component.
-2.  **Redux Update:** An action is dispatched (probably `addMessage` from `chatMessagesSlice.ts`) updating the Redux store with the user's message.
-3.  **API Call:** The `ChatInterface.tsx` component likely calls the `useAddQueryMutation` hook from `chatApi.ts` to send the query to the backend. If "Deep Research" is enabled, it may call `useAddSteamingQueryMutation`.
-4.  **Backend Request:** The `customFetchBase.ts` is used as the base for the API call. It calls the `API_URL` endpoint (defined in `.env`) with the message.
-5.  **Backend Processing (Not Visible):** The backend processes the message. This involves:
-    - Authentication (checking `API_KEY`).
-    - Natural Language Processing (NLP) to understand the query.
-    - Data retrieval from the database.
-    - Generating a response using an AI model.
-6.  **API Response:** The backend sends the response back. If streaming, the response is sent back in chunks.
-7.  **Redux Update:** As the response is received, the `updateMessage` action from `chatMessagesSlice.ts` (or similar) is dispatched to the Redux store, updating the message with the AI's response. For streaming, this happens iteratively.
-8.  **UI Update:** `ChatInterface.tsx` displays the updated message. If a DeepResearchMessage, `DeepResearchMessage.tsx` and its subcomponents `ResearchContent.tsx` and `FinalAnswerSection.tsx` render the data.
+**Scenario:** A user enters a query in the chat interface and sends it. Trace the request through the system.
 
-## 5. KEY CONCEPTS TUTORIAL
+1.  **User Input:** The user types a message in the chat input field of `src/features/chat-studio/chat/ChatInterface.tsx`.
 
-Here are some fundamental concepts and patterns used in the codebase:
+2.  **Dispatch Action:** When the user sends the message, a Redux action is dispatched to add the message to the `chatMessages` slice in `src/libs/redux/chatMessagesSlice.ts`.
 
-**1. Redux for State Management:**
+    ```typescript
+    // src/libs/redux/chatMessagesSlice.ts
+    import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+    import { ChatMessageType } from '@/types/common';
 
-Redux is a predictable state container for JavaScript apps. It helps you write applications that behave consistently across different environments (client, server, and native), are easy to test, and can be debugged with time travel.
+    interface ChatState {
+      messages: ChatMessageType[];
+      filterIds: string[];
+    }
 
-- **Problem Solved:** Managing application state in a centralized and predictable way.
-- **Code Example:**
+    const initialState: ChatState = {
+      messages: [],
+      filterIds: [],
+    };
 
-  ```typescript
-  // src/libs/redux/chatMessagesSlice.ts
-  import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-  interface Message {
-    id: string;
-    sender: "user" | "assistant";
-    content: string;
-  }
-
-  interface ChatState {
-    messages: Message[];
-  }
-
-  const initialState: ChatState = {
-    messages: [],
-  };
-
-  const chatMessagesSlice = createSlice({
-    name: "chatMessages",
-    initialState,
-    reducers: {
-      addMessage: (state, action: PayloadAction<Message>) => {
-        state.messages.push(action.payload);
-      },
-    },
-  });
-
-  export const { addMessage } = chatMessagesSlice.actions;
-  export default chatMessagesSlice.reducer;
-  ```
-
-- **🔑 KEY INSIGHT:** Redux was chosen for its predictability, maintainability, and ability to handle complex application state.
-- **⚠️ COMMON PITFALL:** Overusing Redux for simple UI state can lead to unnecessary complexity. Consider using React's `useState` hook for local component state.
-
-**2. RTK Query for Data Fetching:**
-
-RTK Query is a powerful data fetching and caching tool from Redux Toolkit. It simplifies the process of making API requests and managing data in your application.
-
-- **Problem Solved:** Simplifying data fetching, caching, and state management.
-- **Code Example:**
-
-  ```typescript
-  // src/services/chatApi.ts
-  import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-  const chatApi = createApi({
-    reducerPath: "chatApi",
-    baseQuery: fetchBaseQuery({ baseUrl: process.env.API_URL }),
-    endpoints: (builder) => ({
-      addQuery: builder.mutation({
-        query: (query) => ({
-          url: "/chat",
-          method: "POST",
-          body: { query },
-        }),
-      }),
-    }),
-  });
-
-  export const { useAddQueryMutation } = chatApi;
-  export default chatApi;
-  ```
-
-- **🔑 KEY INSIGHT:** RTK Query was chosen for its built-in caching, automatic retries, and simplified data management.
-- **⚠️ COMMON PITFALL:** Forgetting to invalidate the cache after mutations can lead to stale data. Use `invalidateTags` to ensure data is up-to-date.
-
-**3. Tailwind CSS for Styling:**
-
-Tailwind CSS is a utility-first CSS framework that provides a set of pre-defined CSS classes for styling your application.
-
-- **Problem Solved:** Rapid UI development and consistent styling.
-- **Code Example:**
-
-  ```tsx
-  // src/components/ui/button.tsx
-  import { cva, type VariantProps } from "class-variance-authority";
-  import { cn } from "@/libs/utils";
-  import { Loader2 } from "lucide-react";
-  import { Slot } from "@radix-ui/react-slot";
-
-  const buttonVariants = cva(
-    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none data-[state=open]:bg-secondary/50",
-    {
-      variants: {
-        variant: {
-          default: "bg-primary text-primary-foreground hover:bg-primary/90",
-          destructive:
-            "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-          outline:
-            "bg-transparent border border-input hover:bg-accent hover:text-accent-foreground",
-          secondary:
-            "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-          ghost: "hover:bg-accent hover:text-accent-foreground",
-          link: "underline-offset-4 hover:underline text-primary",
+    export const chatMessagesSlice = createSlice({
+      name: 'chatMessages',
+      initialState,
+      reducers: {
+        addMessage: (state, action: PayloadAction<ChatMessageType>) => {
+          state.messages.push(action.payload);
         },
-        size: {
-          default: "h-10 px-4 py-2",
-          sm: "h-9 rounded-md px-3",
-          lg: "h-11 rounded-md px-8",
-          icon: "h-10 w-10",
+        addMessages: (state, action: PayloadAction<ChatMessageType[]>) => {
+          state.messages.push(...action.payload);
         },
-      },
-      defaultVariants: {
-        variant: "default",
-        size: "default",
-      },
-    },
-  );
-  ```
-
-- **🔑 KEY INSIGHT:** Tailwind CSS was chosen for its speed, flexibility, and maintainability.
-- **⚠️ COMMON PITFALL:** Overusing utility classes can lead to verbose and difficult-to-read HTML. Use component composition and custom CSS classes to avoid this.
-
-**4. React Hook Form and Zod for Form Management and Validation:**
-
-React Hook Form is a library for building performant, flexible, and extensible forms in React. Zod is a TypeScript-first schema declaration and validation library.
-
-- **Problem Solved:** Simplifying form management and validation with type safety.
-- **Code Example:**
-
-  ```typescript
-  // src/pages/ApiKeyPage.tsx
-  import { useForm } from "react-hook-form";
-  import { zodResolver } from "@hookform/resolvers/zod";
-  import * as z from "zod";
-
-  const apiKeySchema = z.object({
-    apiKey: z.string().min(10, {
-      message: "API Key must be at least 10 characters.",
-    }),
-  });
-
-  type ApiKeyType = z.infer<typeof apiKeySchema>;
-
-  function ApiKeyPage() {
-    const form = useForm<ApiKeyType>({
-      resolver: zodResolver(apiKeySchema),
-      defaultValues: {
-        apiKey: "",
+        updateMessage: (state, action: PayloadAction<ChatMessageType>) => {
+            const index = state.messages.findIndex(message => message.id === action.payload.id);
+            if (index !== -1) {
+              state.messages[index] = action.payload;
+            }
+        },
       },
     });
 
-    const onSubmit = (values: ApiKeyType) => {
-      //Handle submit here
-    };
-  }
-  ```
+    export const { addMessage, addMessages, updateMessage } = chatMessagesSlice.actions;
+    export default chatMessagesSlice.reducer;
+    ```
 
-- **🔑 KEY INSIGHT:** React Hook Form and Zod were chosen for their performance, flexibility, and type safety.
-- **⚠️ COMMON PITFALL:** Not handling form errors correctly can lead to a poor user experience. Use the `formState.errors` object to display error messages to the user.
+3.  **API Request (useStreamingResponse):** `ChatInterface.tsx` uses the `useStreamingResponseForChat` hook in `src/hooks/useStreamingResponse.ts`. This hook triggers the `useAddSteamingQueryMutation` mutation from `src/services/chatApi.ts`. This mutation initiates a POST request to `/chat/stream` (or `/chat/deep_think/stream` if deep research is enabled).
 
-**5. Aliases for Imports:**
+    ```typescript
+    // src/hooks/useStreamingResponse.ts
+    import { useState, useEffect, useCallback } from 'react';
+    import { useAppSelector } from '@/libs/redux/hooks';
+    import { useAddSteamingQueryMutation } from '@/services/chatApi';
+    import { ChatMessageType } from '@/types/common';
 
-Using aliases for imports (`@/*` for `./src/*`) improves code readability and maintainability.
-
-- **Problem Solved:** Simplifying imports and improving code organization.
-- **Code Example:**
-
-  ```typescript
-  // tsconfig.json
-  {
-    "compilerOptions": {
-      "baseUrl": ".",
-      "paths": {
-        "@/*": ["./src/*"]
-      }
+    interface UseStreamResponseForChatProps {
+      messages: ChatMessageType[];
+      setMessages: (messages: ChatMessageType[]) => void;
+      isDeepResearchEnabled?: boolean;
     }
+
+    export const useStreamingResponseForChat = ({ messages, setMessages, isDeepResearchEnabled }: UseStreamResponseForChatProps) => {
+      const [isLoading, setIsLoading] = useState(false);
+      const filterIds = useAppSelector((state) => state.sidePanel.filterIds);
+
+      const [addStreamingQuery, { isLoading: isStreaming }] = useAddSteamingQueryMutation();
+
+      useEffect(() => {
+        setIsLoading(isStreaming);
+      }, [isStreaming]);
+
+      const handleStreamResponse = useCallback(async (query: string) => {
+        setIsLoading(true);
+        try {
+          const endpoint = isDeepResearchEnabled ? '/chat/deep_think/stream' : '/chat/stream';
+          const response = await addStreamingQuery({ query, filterIds }).unwrap();
+
+          setMessages((prevMessages) => [...prevMessages, {
+            sender: "assistant",
+            content: response
+          }]);
+
+        } catch (error) {
+          console.error("Error during streaming:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }, [addStreamingQuery, filterIds, isDeepResearchEnabled, setMessages]);
+
+      return { handleStreamResponse, isLoading };
+    };
+    ```
+
+4.  **API Endpoint (chatApi.ts):** The `chatApi.ts` service defines the API endpoint for sending chat queries.
+
+    ```typescript
+    // src/services/chatApi.ts
+    import { apiSlice } from './api/apiSlice';
+
+    export const chatApi = apiSlice.injectEndpoints({
+        endpoints: (builder) => ({
+            addQuery: builder.mutation({
+                query: (query) => ({
+                    url: '/chat/',
+                    method: 'POST',
+                    body: query,
+                }),
+            }),
+            addSteamingQuery: builder.mutation({
+                query: (body) => ({
+                    url: '/chat/stream',
+                    method: 'POST',
+                    body,
+                }),
+            }),
+        }),
+    });
+
+    export const { useAddQueryMutation, useAddSteamingQueryMutation } = chatApi;
+    ```
+
+5.  **Backend Processing:** The backend receives the request, processes the query, and sends a response back to the frontend. It might also interact with the database or AI services.
+
+6.  **State Update:** The response is received by the `useStreamingResponseForChat` hook, which updates the `messages` array in the Redux store.
+
+7.  **UI Update:** The `ChatInterface` component, which is subscribed to the `messages` state, re-renders and displays the new message.
+
+**Understanding Check:**
+
+*   What is the role of the Redux action in this scenario?
+*   How does `useStreamingResponseForChat` hook handle API requests?
+*   How is the UI updated when a new message is received?
+
+## 5. KEY CONCEPTS TUTORIAL
+
+### 1. Redux Toolkit for State Management
+
+**Concept:** Redux Toolkit simplifies Redux development by providing a set of tools and conventions that reduce boilerplate code and improve developer experience.
+
+**Code Example:**
+
+```typescript
+// src/libs/redux/chatMessagesSlice.ts
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { ChatMessageType } from '@/types/common';
+
+interface ChatState {
+  messages: ChatMessageType[];
+  filterIds: string[];
+}
+
+const initialState: ChatState = {
+  messages: [],
+  filterIds: [],
+};
+
+export const chatMessagesSlice = createSlice({
+  name: 'chatMessages',
+  initialState,
+  reducers: {
+    addMessage: (state, action: PayloadAction<ChatMessageType>) => {
+      state.messages.push(action.payload);
+    },
+    addMessages: (state, action: PayloadAction<ChatMessageType[]>) => {
+      state.messages.push(...action.payload);
+    },
+    updateMessage: (state, action: PayloadAction<ChatMessageType>) => {
+        const index = state.messages.findIndex(message => message.id === action.payload.id);
+        if (index !== -1) {
+          state.messages[index] = action.payload;
+        }
+    },
+  },
+});
+
+export const { addMessage, addMessages, updateMessage } = chatMessagesSlice.actions;
+export default chatMessagesSlice.reducer;
+```
+
+**Explanation:**
+
+*   `createSlice` simplifies the creation of Redux slices, automatically generating action creators and reducers.
+*   `PayloadAction` provides type safety for action payloads.
+*   The reducer functions directly mutate the state, thanks to Immer.js, which is integrated into Redux Toolkit.
+
+**🔑 Key Insight:** Redux Toolkit was chosen to provide a more streamlined and efficient way to manage application state compared to traditional Redux.
+
+**⚠️ Common Pitfall:** Forgetting to export the action creators and reducer can lead to errors. Always ensure that you export the action creators and reducer from the slice.
+
+### 2. RTK Query for API Interaction
+
+**Concept:** RTK Query simplifies data fetching and caching by providing a declarative approach to API interaction.
+
+**Code Example:**
+
+```typescript
+// src/services/chatApi.ts
+import { apiSlice } from './api/apiSlice';
+
+export const chatApi = apiSlice.injectEndpoints({
+    endpoints: (builder) => ({
+        addQuery: builder.mutation({
+            query: (query) => ({
+                url: '/chat/',
+                method: 'POST',
+                body: query,
+            }),
+        }),
+        addSteamingQuery: builder.mutation({
+            query: (body) => ({
+                url: '/chat/stream',
+                method: 'POST',
+                body,
+            }),
+        }),
+    }),
+});
+
+export const { useAddQueryMutation, useAddSteamingQueryMutation } = chatApi;
+```
+
+**Explanation:**
+
+*   `apiSlice.injectEndpoints` allows you to define API endpoints as part of a base API slice.
+*   `builder.mutation` defines a mutation endpoint for sending data to the server.
+*   RTK Query automatically generates React hooks for each endpoint, simplifying data fetching in components.
+
+**🔑 Key Insight:** RTK Query was chosen to reduce boilerplate code and simplify data fetching, caching, and state management for API interactions.
+
+**⚠️ Common Pitfall:** Not handling loading and error states correctly can lead to a poor user experience. Always check the `isLoading` and `isError` properties returned by the RTK Query hooks.
+
+### 3. Tailwind CSS for Styling
+
+**Concept:** Tailwind CSS is a utility-first CSS framework that provides a set of pre-defined utility classes for styling HTML elements.
+
+**Code Example:**
+
+```tsx
+// src/components/ui/button.tsx
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/libs/utils"
+import { Loader2 } from "lucide-react"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "bg-transparent border border-input hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "bg-transparent hover:bg-accent hover:text-accent-foreground",
+        link: "bg-transparent underline-offset-4 hover:underline text-primary",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
   }
+)
 
-  // Example usage
-  import { Button } from '@/components/ui/button';
-  ```
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  isLoading?: boolean
+}
 
-- **🔑 KEY INSIGHT:** Aliases provide a clear and consistent way to import modules, making the codebase easier to navigate and understand.
-- **⚠️ COMMON PITFALL:** Forgetting to configure aliases in `tsconfig.json` or Vite configuration can lead to import errors.
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, children, variant, size, asChild = false, isLoading = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      >
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {children}
+      </Comp>
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+```
+
+**Explanation:**
+
+*   Tailwind CSS classes are used to style the button component, such as `bg-blue-500`, `text-white`, and `rounded-md`.
+*   The `cn` utility function is used to merge class names, allowing for conditional styling.
+
+**🔑 Key Insight:** Tailwind CSS was chosen to enable rapid UI development and maintain a consistent design language throughout the application.
+
+**⚠️ Common Pitfall:** Overusing custom CSS can negate the benefits of Tailwind CSS. Try to stick to the pre-defined utility classes as much as possible.
+
+### 4. Zod for Validation
+
+**Concept:** Zod is a TypeScript-first validation library that allows you to define schemas for validating data.
+
+**Code Example:**
+
+```typescript
+// src/validators/authSchema.ts
+import { z } from "zod"
+
+export const apiKeySchema = z.string().min(10, {
+  message: "API Key must be at least 10 characters.",
+})
+
+export type ApiKeyType = z.infer<typeof apiKeySchema>
+```
+
+**Explanation:**
+
+*   `z.string()` defines a schema for validating strings.
+*   `.min(10)` specifies that the string must be at least 10 characters long.
+*   `ApiKeyType` is a TypeScript type inferred from the Zod schema.
+
+**🔑 Key Insight:** Zod was chosen to provide a type-safe and efficient way to validate data, improving data integrity and preventing errors.
+
+**⚠️ Common Pitfall:** Not handling validation errors correctly can lead to a poor user experience. Always display informative error messages to the user.
 
 ## 6. WORKFLOW GUIDES
 
-**How to Implement a New Feature:**
+### How to Implement a New Feature (Example Flow)
 
-1.  **Create a New Branch:** Create a new branch for your feature.
-2.  **Implement the Feature:** Write the code for your feature, following the coding standards and conventions.
-3.  **Add Tests:** Add tests for your feature to ensure that it works correctly.
-4.  **Create a Pull Request:** Create a pull request to merge your branch into the main branch.
-5.  **Code Review:** Have your code reviewed by another developer.
-6.  **Merge the Pull Request:** Once your code has been reviewed and approved, merge the pull request into the main branch.
+**Scenario:** Implement a feature that allows users to export chat history to a text file.
 
-**Example Flow:**
-
-Let's say you want to add a new feature to display the current user's profile picture in the chat interface.
-
-1.  **Create a New Branch:**
+1.  **Create a new branch:**
 
     ```bash
-    git checkout -b feature/user-profile-picture
+    git checkout -b feature/export-chat-history
     ```
 
-2.  **Implement the Feature:**
+2.  **Implement the feature:**
 
-    - Modify the `ChatInterface.tsx` component to fetch and display the user's profile picture.
-    - Create a new component for displaying the profile picture.
-    - Update the API service to fetch the user's profile picture.
+    *   Create a new component, `src/components/ExportChatHistory.tsx`, that exports the chat history to a text file.
 
-3.  **Add Tests:**
+        ```tsx
+        // src/components/ExportChatHistory.tsx
+        import { Button } from "@/components/ui/button";
+        import { useAppSelector } from "@/libs/redux/hooks";
+        import { saveAs } from 'file-saver';
 
-    - Add tests for the new component.
-    - Add tests for the updated API service.
+        const ExportChatHistory = () => {
+          const chatMessages = useAppSelector((state) => state.chatMessages.messages);
 
-4.  **Create a Pull Request:**
+          const handleExport = () => {
+            const chatText = chatMessages.map((message) => `${message.sender}: ${message.content}`).join('\n');
+            const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
+            saveAs(blob, 'chat_history.txt');
+          };
+
+          return (
+            <Button onClick={handleExport}>Export Chat History</Button>
+          );
+        };
+
+        export default ExportChatHistory;
+        ```
+
+    *   Add the component to the `ChatInterface` in `src/features/chat-studio/chat/ChatInterface.tsx`.
+
+        ```tsx
+        // src/features/chat-studio/chat/ChatInterface.tsx
+        import ExportChatHistory from "@/components/ExportChatHistory";
+
+        const ChatInterface = () => {
+            // ...other code
+            return (
+                <div>
+                    {/* ...other components */}
+                    <ExportChatHistory />
+                </div>
+            );
+        };
+        ```
+
+3.  **Add tests:**
+
+    *   Create a test file, `src/components/ExportChatHistory.test.tsx`, and add tests to verify that the component exports the chat history correctly.
+
+4.  **Commit the changes:**
 
     ```bash
     git add .
-    git commit -m "feat: add user profile picture to chat interface"
-    git push origin feature/user-profile-picture
+    git commit -m "feat: implement export chat history feature"
     ```
 
-    Create a pull request on GitHub to merge your branch into the main branch.
+5.  **Create a pull request:**
 
-5.  **Code Review:**
+    *   Push the branch to the remote repository.
+    *   Create a pull request from the `feature/export-chat-history` branch to the `main` branch.
 
-    Have your code reviewed by another developer.
+6.  **Code review:**
 
-6.  **Merge the Pull Request:**
+    *   Wait for the code review and address any feedback.
 
-    Once your code has been reviewed and approved, merge the pull request into the main branch.
+7.  **Merge the pull request:**
 
-**How to Fix a Bug:**
+    *   Once the code review is complete and all feedback has been addressed, merge the pull request into the `main` branch.
 
-1.  **Create a New Branch:** Create a new branch for your bug fix.
-2.  **Identify the Bug:** Identify the cause of the bug and the code that needs to be modified.
-3.  **Fix the Bug:** Write the code to fix the bug.
-4.  **Add Tests:** Add tests to ensure that the bug is fixed and doesn't reappear in the future.
-5.  **Create a Pull Request:** Create a pull request to merge your branch into the main branch.
-6.  **Code Review:** Have your code reviewed by another developer.
-7.  **Merge the Pull Request:** Once your code has been reviewed and approved, merge the pull request into the main branch.
+### How to Fix a Bug (Debugging Approach)
 
-**How to Add Tests for New Functionality:**
+1.  **Identify the bug:**
 
-- Use Jest and React Testing Library for testing React components.
-- Write unit tests for individual components and functions.
-- Write integration tests to ensure that components work together correctly.
-- Use mocks and stubs to isolate components during testing.
-- Aim for high test coverage to ensure that all code is tested.
-
-**Code Review Process and Standards:**
-
-- All code changes must be reviewed by another developer before being merged into the main branch.
-- Code reviews should focus on code quality, correctness, and maintainability.
-- Follow the coding standards and conventions defined in the project.
-- Provide constructive feedback and suggestions for improvement.
-- Ensure that all tests pass before approving a pull request.
-
-**✅ PRACTICAL EXERCISE: Implement a simple feature**
-
-Implement a feature that displays the current date and time in the chat interface.
-
-1.  Create a new branch: `git checkout -b feature/display-date-time`.
-2.  In `ChatInterface.tsx`, add a state variable to store the current date and time.
-3.  Create a function to update the date and time every second using `setInterval`.
-4.  Display the date and time in the chat interface.
-5.  Commit your changes and create a pull request.
-
-## 7. COMPONENT DEEP DIVES
-
-Let's take a closer look at some major components in the application:
-
-**1. ChatInterface.tsx**
-
-- **Purpose:** The main user interface component for the chat feature.
-- **Responsibilities:**
-  - Rendering chat messages.
-  - Handling user input.
-  - Sending messages to the backend.
-  - Managing streaming responses.
-  - Toggling side panels.
-- **Key Files:** `src/features/chat-studio/chat/ChatInterface.tsx`
-- **Internal Data Flow:**
-  - User input is captured and stored in local state.
-  - Messages are fetched from the Redux store.
-  - API calls are made using the `useAddQueryMutation` hook from `chatApi.ts`.
-  - Streaming responses are handled using the `useStreamingResponseForChat` hook.
-  - Side panel visibility is controlled by dispatching actions to the Redux store.
-- **Integration Points:**
-  - Redux store for state management.
-  - `chatApi.ts` for API communication.
-  - `useStreamingResponseForChat` hook for streaming responses.
-  - UI components from `src/components`.
-- **Configuration Options:**
-  - The API endpoint can be configured using the `API_URL` environment variable.
-  - The side panel visibility can be controlled using Redux actions.
-- **Testing Strategy:**
-  - Unit tests for rendering and user interaction.
-  - Integration tests to ensure that the component interacts correctly with the Redux store and API services.
-
-**2. Redux Store (src/libs/redux)**
-
-- **Purpose:** Centralized state management for the application.
-- **Responsibilities:**
-  - Storing application state.
-  - Providing actions for updating the state.
-  - Providing selectors for accessing the state.
-- **Key Files:**
-  - `src/libs/redux/store.ts`: Configures the Redux store.
-  - `src/libs/redux/chatMessagesSlice.ts`: Manages the chat message state.
-  - `src/libs/redux/sidePanelSlice.ts`: Manages the side panel state.
-- **Internal Data Flow:**
-  - Actions are dispatched from components to update the state.
-  - Reducers handle the actions and update the state accordingly.
-  - Selectors are used to access the state from components.
-- **Integration Points:**
-  - All components can access the Redux store using the `useSelector` hook.
-  - Components can dispatch actions to the Redux store using the `useDispatch` hook.
-- **Configuration Options:**
-  - The Redux store can be configured with different reducers and middleware.
-- **Testing Strategy:**
-  - Unit tests for reducers to ensure that they update the state correctly.
-  - Integration tests to ensure that components interact correctly with the Redux store.
-
-**3. API Services (src/services)**
-
-- **Purpose:** Handles communication with the backend API.
-- **Responsibilities:**
-  - Making API requests.
-  - Caching API responses.
-  - Handling API errors.
-- **Key Files:**
-  - `src/services/chatApi.ts`: Provides API endpoints for interacting with the chat service.
-  - `src/services/promptTemplateApi.ts`: Provides API endpoints for retrieving prompt templates.
-  - `src/services/filters/filtersApi.ts`: Provides API endpoints for retrieving filter options.
-  - `src/services/api/apiSlice.ts`: Sets up the base API slice using RTK Query.
-  - `src/services/api/customFetchBase.ts`: Defines the base query function for making API requests.
-- **Internal Data Flow:**
-  - Components call the API services to make requests.
-  - The API services use RTK Query to handle data fetching and caching.
-  - The API services return the data to the components.
-- **Integration Points:**
-  - Components call the API services using the `useQuery` and `useMutation` hooks from RTK Query.
-  - The API services use the `apiSlice` to configure the API base URL and caching options.
-- **Configuration Options:**
-  - The API base URL can be configured using the `API_URL` environment variable.
-  - Caching options can be configured in the `apiSlice`.
-- **Testing Strategy:**
-  - Unit tests for API services to ensure that they make the correct requests.
-  - Integration tests to ensure that the API services interact correctly with the backend.
-
-## 8. FIRST CONTRIBUTION GUIDE
-
-**Contribution Workflow:**
-
-1.  **Fork the Repository:** Fork the repository to your GitHub account.
-2.  **Clone the Repository:** Clone your forked repository to your local machine.
-3.  **Create a New Branch:** Create a new branch for your changes.
-4.  **Make Your Changes:** Make your changes, following the coding standards and conventions.
-5.  **Add Tests:** Add tests for your changes.
-6.  **Commit Your Changes:** Commit your changes with a clear and concise message.
-7.  **Push Your Changes:** Push your changes to your forked repository.
-8.  **Create a Pull Request:** Create a pull request to merge your branch into the main repository.
-9.  **Code Review:** Have your code reviewed by another developer.
-10. **Merge the Pull Request:** Once your code has been reviewed and approved, merge the pull request into the main repository.
-
-**Coding Standards and Conventions:**
-
-- Follow the Airbnb JavaScript Style Guide.
-- Use TypeScript for all new code.
-- Write clear and concise code.
-- Add comments to explain complex code.
-- Use meaningful variable and function names.
-- Keep functions short and focused.
-- Avoid code duplication.
-- Handle errors gracefully.
-- Follow the principles of SOLID design.
-
-**Testing Requirements:**
-
-- All code changes must be tested.
-- Write unit tests for individual components and functions.
-- Write integration tests to ensure that components work together correctly.
-- Aim for high test coverage.
-- All tests must pass before a pull request can be merged.
-
-**Suggested "Good First Issues":**
-
-1.  **Problem Description:** Fix a typo in the `README.md` file.
-
-    - **Files that Need Modification:** `README.md`
-    - **Implementation Hints:** Search for typos in the file and correct them.
-
-2.  **Problem Description:** Add a new item to the `decisionDateData` array in `src/utils/data.ts`.
-
-    - **Files that Need Modification:** `src/utils/data.ts`
-    - **Implementation Hints:** Add a new object to the array with a `label` and `value`.
-
-3.  **Problem Description:** Add a tooltip to the "Copy" button in `AiResponseAction.tsx` to indicate when the text has been copied to the clipboard.
-    - **Files that Need Modification:** `src/features/chat-studio/chat/components/AiResponseAction.tsx`
-    - **Implementation Hints:** Use `useState` to track the copied state and conditionally render a tooltip using the `sonner` library.
-
-**✅ PRACTICAL EXERCISE: Fix a simple bug**
-
-The "TypingLoader" component currently has a typo. Fix the component's name to "TypingLoader" by renaming the file and updating the component name.
-
-1.  Create a new branch: `git checkout -b fix/typing-loader-typo`.
-2.  Rename the file from `TypingLoadder.tsx` to `TypingLoader.tsx`.
-3.  Update the component name in `TypingLoader.tsx` to `TypingLoader`.
-4.  Update any imports of `TypingLoadder` to `TypingLoader`.
-5.  Commit your changes and create a pull request.
-
-## 9. ADVANCED TOPICS
-
-**Performance Considerations and Optimization Strategies:**
-
-- **Code Splitting:** Use code splitting to reduce the initial load time of the application.
-- **Lazy Loading:** Use lazy loading to load components only when they are needed.
-- **Memoization:** Use memoization to avoid re-rendering components unnecessarily.
-- **Virtualization:** Use virtualization to efficiently render large lists of data.
-- **Image Optimization:** Optimize images to reduce their file size.
-- **Caching:** Use caching to store frequently accessed data.
-- **Debouncing and Throttling:** Use debouncing and throttling to limit the number of times a function is called.
-
-**Security Patterns and Best Practices:**
-
-- **Input Validation:** Validate all user input to prevent injection attacks.
-- **Output Encoding:** Encode all output to prevent cross-site scripting (XSS) attacks.
-- **Authentication and Authorization:** Implement strong authentication and authorization mechanisms.
-- **Secure Communication:** Use HTTPS to encrypt communication between the client and server.
-- **Regular Security Audits:** Conduct regular security audits to identify and address vulnerabilities.
-- **Dependencies Scan:** Scan dependencies for security vulnerabilities.
-- **Rate Limiting:** Implement rate limiting to prevent brute-force attacks.
-- **CORS Configuration:** Configure CORS (Cross-Origin Resource Sharing) to restrict access to the API from unauthorized domains.
-
-**Deployment Workflow and Environments:**
-
-- **Development Environment:** Used for local development and testing.
-- **Staging Environment:** Used for testing changes before deploying to production.
-- **Production Environment:** The live environment that users interact with.
-
-**Deployment Steps:**
-
-1.  **Build the Application:** Build the application for production using `pnpm build`.
-2.  **Containerize the Application:** Containerize the application using Docker.
-3.  **Push the Image to a Registry:** Push the Docker image to a container registry (e.g., Docker Hub, AWS ECR).
-4.  **Deploy the Container:** Deploy the Docker container to a server or container orchestration platform (e.g., Kubernetes, AWS ECS).
-5.  **Configure the Environment:** Configure the environment variables and other settings for the deployment.
-6.  **Monitor the Application:** Monitor the application for errors and performance issues.
-
-**Monitoring and Logging:**
-
-- Use a logging framework to log application events and errors.
-- Use a monitoring tool to track application performance and health.
-- Set up alerts to notify you of critical errors and performance issues.
-- Use log aggregation tools to collect and analyze logs from multiple sources.
-- Implement centralized logging to ease troubleshooting and maintenance.
-
-**Scaling Considerations:**
-
-- **Horizontal Scaling:** Add more instances of the application to handle increased traffic.
-- **Vertical Scaling:** Increase the resources (CPU, memory) of the existing instances.
-- **Database Scaling:** Scale the database to handle increased data volume and query load.
-- **Load Balancing:** Use a load balancer to distribute traffic across multiple instances.
-- **Caching:** Use caching to reduce the load on the database and backend servers.
-- **CDN (Content Delivery Network):** Use a CDN to cache and deliver static assets closer to the user.
-
-## 10. TROUBLESHOOTING AND FAQ
-
-**Common Errors and Their Solutions:**
-
-- **"Cannot find module" Error:** Ensure that all dependencies are installed correctly. Try deleting the `node_modules` directory and running `pnpm install` again
+    *   Reproduce the bug and
