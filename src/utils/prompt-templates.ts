@@ -1,4 +1,5 @@
 import type { Document } from "@langchain/core/documents";
+import { fileStructure, summarizations } from "~/lib/doc-data";
 
 export const COMMIT_SUMMARY_PROMPT = (
   commitDiff: string,
@@ -63,3 +64,115 @@ export const SOURCE_CODE_PROMPT = (
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export const DOCUMENTATION_GENERATION_PROMPT = () => `
+    You are an expert software architect and technical writer.
+    Create a comprehensive tutorial-based project documentation for new developers joining this project based on the following GitHub repository analysis:
+
+    CONTEXT: 
+    Folder Structure: ${JSON.stringify(fileStructure)}
+    File Summaries: ${JSON.stringify(summarizations)}
+
+    INSTRUCTIONS:
+    Generate a "Developer's Guide to Understanding and Contributing to ${`Aurora`} with the following sections:
+
+    1. PROJECT OVERVIEW (2-3 paragraphs):
+      - Purpose, vision, and core functionality
+      - Key problems it solves
+      - Primary user base and use cases
+      - Tech stack overview
+
+    2. SYSTEM ARCHITECTURE:
+      - Create a Mermaid diagram showing the core architecture with:
+        * Main components/services
+        * Data flow between components
+        * External dependencies
+        * Key interfaces
+        * Database design
+        
+        Mermaid Diagram Rules
+            - Use proper indentation
+            - Avoid special characters in node names
+            - Use consistent arrow types (--> for direct, -.-> for indirect)
+            - Group related components using subgraphs
+            - Validate syntax using official Mermaid docs
+        
+      - Explain the diagram in a step-by-step manner to build understanding
+      - Include a second Mermaid diagram showing key data flows through the system
+
+    3. DEVELOPMENT ENVIRONMENT SETUP:
+      - Prerequisites and tools installation
+      - Step-by-step configuration instructions
+      - Environment variables and configuration files explanation
+      - Verification steps to ensure everything is working correctly
+      - Common setup issues and their solutions
+
+    4. CODEBASE WALKTHROUGH:
+      - Entry points to the application
+      - Core modules and their responsibilities
+      - Important design patterns and architectural decisions
+      - Directory structure rationale
+      - ✅ PRACTICAL EXERCISE: "Trace a request through the system"
+
+    5. KEY CONCEPTS TUTORIAL:
+      - Identify 4-5 fundamental concepts/patterns in the codebase
+      - Explain each concept with real code examples
+      - Show how these patterns solve specific problems
+      - 🔑 KEY INSIGHT: For each concept, highlight why this approach was chosen
+      - ⚠️ COMMON PITFALL: Warn about misunderstandings or mistakes
+
+    6. WORKFLOW GUIDES:
+      - How to implement a new feature (with example flow)
+      - How to fix a bug (with debugging approach)
+      - How to add tests for new functionality
+      - Code review process and standards
+      - ✅ PRACTICAL EXERCISE: "Implement a simple feature"
+
+    7. COMPONENT DEEP DIVES:
+      - For each major component:
+        * Purpose and responsibilities
+        * Key files and their functions
+        * Internal data flow
+        * Integration points with other components
+        * Configuration options
+        * Testing strategy
+      - Include relevant Mermaid diagrams for complex components
+
+    8. FIRST CONTRIBUTION GUIDE:
+      - Contribution workflow from fork to PR
+      - Coding standards and conventions
+      - Testing requirements
+      - 3 suggested "good first issues" with:
+        * Problem description
+        * Files that need modification
+        * Pseudocode or implementation hints
+      - ✅ PRACTICAL EXERCISE: "Fix a simple bug"
+
+    9. ADVANCED TOPICS:
+      - Performance considerations and optimization strategies
+      - Security patterns and best practices
+      - Deployment workflow and environments
+      - Monitoring and logging
+      - Scaling considerations
+
+    10. TROUBLESHOOTING AND FAQ:
+      - Common errors and their solutions
+      - Debugging tools and techniques
+      - Where to find logs and how to interpret them
+      - Who to ask for help with specific components
+
+    FORMAT:
+    - Use clear markdown with proper headings,subheadings and structure
+    - Use heading levels 1-3 for main sections and subsections for better readability
+    - Include multiple Mermaid diagrams for architecture, workflows, and component interactions
+    - Incorporate code snippets from the actual codebase to illustrate concepts
+    - Add learning checkpoints as "Understanding Check" sections
+    - Include "🔑 Key Insight" callouts to highlight important patterns or conventions
+    - Add "⚠️ Common Pitfall" warnings where developers often make mistakes
+    - Format as a progressive learning journey that builds understanding incrementally
+    - Include hands-on exercises that let developers interact with the codebase
+    - Use emoji flags: 🚧 Warning, ✅ Verified, 🔍 Check
+
+
+    NB: Do not include any text outside of valid Markdown, and do not reference your internal thought process.
+    `;
