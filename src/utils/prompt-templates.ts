@@ -138,24 +138,7 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
         * Testing strategy
       - Include relevant Mermaid diagrams for complex components
 
-    8. FIRST CONTRIBUTION GUIDE:
-      - Contribution workflow from fork to PR
-      - Coding standards and conventions
-      - Testing requirements
-      - 3 suggested "good first issues" with:
-        * Problem description
-        * Files that need modification
-        * Pseudocode or implementation hints
-      - ✅ PRACTICAL EXERCISE: "Fix a simple bug"
-
-    9. ADVANCED TOPICS:
-      - Performance considerations and optimization strategies
-      - Security patterns and best practices
-      - Deployment workflow and environments
-      - Monitoring and logging
-      - Scaling considerations
-
-    10. TROUBLESHOOTING AND FAQ:
+    8. TROUBLESHOOTING AND FAQ:
       - Common errors and their solutions
       - Debugging tools and techniques
       - Where to find logs and how to interpret them
@@ -163,9 +146,8 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
 
     FORMAT:
     - Use clear markdown with proper headings,subheadings and structure
-    - For every sub-section, includes things like overview, key points, purpose and other relevant information along with comprehensive description of that section. Use multilevel hierarchy for better readability.
+    - For every section, sub-section should includes things like overview, key points, purpose and other relevant information along with comprehensive description of that section. Use multilevel hierarchy for better readability.
     - Use multiple heading levels 1-3 for main sections and subsections for better readability
-    - Include multiple Mermaid diagrams for architecture, workflows, and component interactions
     - Use proper markdown syntax for code blocks, lists, bold, italics, etc. Use Tables when appropriate for better data representation
     - Incorporate code snippets from the actual codebase to illustrate concepts
     - Add learning checkpoints as "Understanding Check" sections
