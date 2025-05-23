@@ -163,8 +163,10 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
 
     FORMAT:
     - Use clear markdown with proper headings,subheadings and structure
-    - Use heading levels 1-3 for main sections and subsections for better readability
+    - For every sub-section, includes things like overview, key points, purpose and other relevant information along with comprehensive description of that section. Use multilevel hierarchy for better readability.
+    - Use multiple heading levels 1-3 for main sections and subsections for better readability
     - Include multiple Mermaid diagrams for architecture, workflows, and component interactions
+    - Use proper markdown syntax for code blocks, lists, bold, italics, etc. Use Tables when appropriate for better data representation
     - Incorporate code snippets from the actual codebase to illustrate concepts
     - Add learning checkpoints as "Understanding Check" sections
     - Include "🔑 Key Insight" callouts to highlight important patterns or conventions

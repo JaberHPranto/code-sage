@@ -1,7 +1,3 @@
-import { aiSummarizeSourceCode, generateCodeEmbedding } from "~/lib/gemini";
-import { db } from "~/server/db";
-import { delay } from "~/utils/prompt-templates";
-
 /*
  <-- Workflow -->
   
@@ -9,32 +5,6 @@ import { delay } from "~/utils/prompt-templates";
   docs [] => summary [] => embedding [] => save to db  
           -> getSummary(document.pageContent) -> getEmbedding(summary) -> store to pg vector
 */
-
-// export const loadGithubRepo = async (
-//   githubUrl: string,
-//   githubToken?: string,
-// ) => {
-//   const loader = new GithubRepoLoader(githubUrl, {
-//     accessToken: githubToken || process.env.GITHUB_TOKEN,
-//     branch: "main",
-//     ignoreFiles: [
-//       ".gitignore",
-//       "package-lock.json",
-//       "yarn.lock",
-//       "pnpm-lock.yaml",
-//       "bun.lockb",
-//       "*.md",
-//       "*.svg",
-//     ],
-//     recursive: true,
-//     maxConcurrency: 10,
-//     unknown: "warn",
-//   });
-
-//   const docs = await loader.load();
-
-//   return docs;
-// };
 
 import { Octokit } from "@octokit/rest";
 

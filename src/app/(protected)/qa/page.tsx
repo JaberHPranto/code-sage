@@ -68,7 +68,7 @@ const QAPage = () => {
       </div>
 
       {selectedQuestion && (
-        <SheetContent className="overflow-scroll p-4 sm:max-w-[60vw]">
+        <SheetContent className="overflow-auto p-4 sm:max-w-[60vw]">
           <SheetHeader>
             <SheetTitle>{selectedQuestion.question}</SheetTitle>
           </SheetHeader>

@@ -3,7 +3,7 @@ import { Toaster } from "sonner";
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Lato } from "next/font/google";
+import { Nunito } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const lato = Lato({
+const nunito = Nunito({
   subsets: ["latin"],
   weight: ["400", "700"],
 });
@@ -24,7 +24,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${lato.className}`}>
+      <html lang="en" className={`${nunito.className}`}>
         <body>
           <TRPCReactProvider>{children}</TRPCReactProvider>
           <Toaster richColors />
