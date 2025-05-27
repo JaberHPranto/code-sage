@@ -74,15 +74,15 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
     File Summaries: ${JSON.stringify(summarizations)}
 
     INSTRUCTIONS:
-    Generate a "Developer's Guide to Understanding and Contributing to ${`Aurora`} with the following sections:
+    Generate a Developer's Guide to Understanding and Contributing to ${`Aurora`} with the following sections:
 
-    1. PROJECT OVERVIEW (2-3 paragraphs):
+    Project Overview:
       - Purpose, vision, and core functionality
       - Key problems it solves
       - Primary user base and use cases
       - Tech stack overview
 
-    2. SYSTEM ARCHITECTURE:
+    System Architecture:
       - Create a Mermaid diagram showing the core architecture with:
         * Main components/services
         * Data flow between components
@@ -100,35 +100,36 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
       - Explain the diagram in a step-by-step manner to build understanding
       - Include a second Mermaid diagram showing key data flows through the system
 
-    3. DEVELOPMENT ENVIRONMENT SETUP:
+    Development Environment Setup:
       - Prerequisites and tools installation
       - Step-by-step configuration instructions
       - Environment variables and configuration files explanation
       - Verification steps to ensure everything is working correctly
       - Common setup issues and their solutions
 
-    4. CODEBASE WALKTHROUGH:
+    Codebase Walkthrough:
+      - Directory structure overview
       - Entry points to the application
       - Core modules and their responsibilities
       - Important design patterns and architectural decisions
       - Directory structure rationale
       - ✅ PRACTICAL EXERCISE: "Trace a request through the system"
 
-    5. KEY CONCEPTS TUTORIAL:
+    Key Technical Concepts:
       - Identify 4-5 fundamental concepts/patterns in the codebase
       - Explain each concept with real code examples
       - Show how these patterns solve specific problems
       - 🔑 KEY INSIGHT: For each concept, highlight why this approach was chosen
       - ⚠️ COMMON PITFALL: Warn about misunderstandings or mistakes
 
-    6. WORKFLOW GUIDES:
+    Workflow Guide
       - How to implement a new feature (with example flow)
       - How to fix a bug (with debugging approach)
       - How to add tests for new functionality
       - Code review process and standards
       - ✅ PRACTICAL EXERCISE: "Implement a simple feature"
 
-    7. COMPONENT DEEP DIVES:
+    Technical Design Decisions:
       - For each major component:
         * Purpose and responsibilities
         * Key files and their functions
@@ -138,7 +139,7 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
         * Testing strategy
       - Include relevant Mermaid diagrams for complex components
 
-    8. TROUBLESHOOTING AND FAQ:
+    Troubleshooting Guide:
       - Common errors and their solutions
       - Debugging tools and techniques
       - Where to find logs and how to interpret them
@@ -147,16 +148,18 @@ export const DOCUMENTATION_GENERATION_PROMPT = () => `
     FORMAT:
     - Use clear markdown with proper headings,subheadings and structure
     - For every section, sub-section should includes things like overview, key points, purpose and other relevant information along with comprehensive description of that section. Use multilevel hierarchy for better readability.
-    - Use multiple heading levels 1-3 for main sections and subsections for better readability
-    - Use proper markdown syntax for code blocks, lists, bold, italics, etc. Use Tables when appropriate for better data representation
+    - The sub-sections should be very detailed. Use code snippets, mermaid diagrams and examples whenever possible
+    - Use multiple heading levels for main sections and subsections for better readability
+    - Use mermaid diagrams to illustrate complex concepts and patterns.
+    - Heavily use analogies and examples throughout to help beginners understand.
     - Incorporate code snippets from the actual codebase to illustrate concepts
-    - Add learning checkpoints as "Understanding Check" sections
     - Include "🔑 Key Insight" callouts to highlight important patterns or conventions
     - Add "⚠️ Common Pitfall" warnings where developers often make mistakes
-    - Format as a progressive learning journey that builds understanding incrementally
-    - Include hands-on exercises that let developers interact with the codebase
     - Use emoji flags: 🚧 Warning, ✅ Verified, 🔍 Check
 
+  - IMPORTANT: 
+    - Do not include any number for marking headings. For example, do not use "1. " or "1.1. " type formatting.
+    - When you need to refer to other core abstractions covered in other chapters, ALWAYS use proper Markdown links like this: [Chapter Title](filename.md). Use the  Complete Tutorial Structure above to find the correct filename and the chapter title. Translate the surrounding text.
 
     NB: Do not include any text outside of valid Markdown, and do not reference your internal thought process.
     `;

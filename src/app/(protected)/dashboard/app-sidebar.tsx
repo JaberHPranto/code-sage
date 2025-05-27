@@ -39,8 +39,8 @@ const items = [
     icon: Bot,
   },
   {
-    title: "Documentation",
-    url: "/documentation",
+    title: "Documentations",
+    url: "/documentations",
     icon: BookOpenText,
   },
   {

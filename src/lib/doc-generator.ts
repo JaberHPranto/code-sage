@@ -18,121 +18,105 @@ export async function generateDocumentation() {
   return response.response.text();
 }
 
-// --- TEST: Documentation generation ---
 const fs = require("fs");
 const path = require("path");
-
-// const outputFilePath = path.join(__dirname, "output.md");
-// fs.writeFileSync(outputFilePath, await generateDocumentation());
-
-// console.log("Documentation generated successfully at", outputFilePath);
-
-// --- TEST: Documentation structure ---
-// const fs = require("fs");
-// const path = require("path");
 
 const outputFilePath = path.join(__dirname, "output.md");
 const content = fs.readFileSync(outputFilePath, "utf8");
 
-// const structuredContent = await convertToStructuredDocumentation(content);
-// console.log("Structured documentation:", structuredContent);
+interface ISubChapter {
+  title: string;
+  id: string; // ID for HTML element targeting (required)
+}
 
-interface Chapter {
-  id: string;
-  level: number;
+interface IChapter {
   title: string;
   content: string;
-  children: Chapter[];
+  items: ISubChapter[];
 }
 
-function parseMarkdownChapters(markdownContent: string): Chapter[] {
-  // Split the markdown content into lines
-  const lines = markdownContent.split("\n");
+const generateId = (title: string): string => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
 
-  const rootChapters: Chapter[] = [];
-  const chapterStack: Chapter[] = [];
-  let currentContent: string[] = [];
+const extractChapterContent = (
+  fullContent: string,
+  chapterTitle: string,
+  nextChapterTitle?: string,
+): string => {
+  const chapterIndex = fullContent.indexOf(`## ${chapterTitle}`);
+  if (chapterIndex === -1) return "";
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? "";
+  const startIndex = chapterIndex;
 
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+  let endIndex: number;
+  if (nextChapterTitle) {
+    const nextIndex = fullContent.indexOf(`## ${nextChapterTitle}`);
+    endIndex = nextIndex !== -1 ? nextIndex : fullContent.length;
+  } else {
+    endIndex = fullContent.length;
+  }
 
-    if (headingMatch) {
-      if (currentContent.length > 0 && chapterStack.length > 0) {
-        chapterStack[chapterStack.length - 1]!.content +=
-          currentContent.join("\n");
-        currentContent = [];
-      }
+  return fullContent.substring(startIndex, endIndex).trim();
+};
 
-      const level = headingMatch[1]!.length;
-      const title = headingMatch[2]!.trim();
+const parseMarkdown = (markdownContent: string): IChapter[] => {
+  const structure: IChapter[] = [];
 
-      // Generate a unique ID from the title
-      const id = title
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-");
+  // Extract all level 2 headings (chapters)
+  const chapterMatches = markdownContent.match(/^## (.+)$/gm);
+  if (!chapterMatches) return structure;
 
-      // Create a new chapter
-      const newChapter: Chapter = {
-        id,
-        level,
-        title,
-        content: "",
-        children: [],
-      };
+  const chapterTitles = chapterMatches.map((match) =>
+    match.replace(/^## /, ""),
+  );
 
-      // Pop chapters from the stack until we find a parent chapter or reach the root
-      while (
-        chapterStack.length > 0 &&
-        chapterStack[chapterStack.length - 1]!.level >= level
-      ) {
-        chapterStack.pop();
-      }
+  chapterTitles.forEach((chapterTitle, index) => {
+    const nextChapterTitle = chapterTitles[index + 1];
 
-      // If there's a parent chapter, add the new chapter to its children
-      if (chapterStack.length > 0) {
-        chapterStack[chapterStack.length - 1]!.children.push(newChapter);
-      } else {
-        rootChapters.push(newChapter);
-      }
+    // Extract full chapter content
+    const chapterContent = extractChapterContent(
+      markdownContent,
+      chapterTitle,
+      nextChapterTitle,
+    );
 
-      chapterStack.push(newChapter);
-    } else {
-      currentContent.push(line);
+    // Extract all level 3 headings (subchapters) within this chapter
+    const subChapterMatches = chapterContent.match(/^### (.+)$/gm);
+    const subChapters: ISubChapter[] = [];
+
+    if (subChapterMatches) {
+      const subChapterTitles = subChapterMatches.map((match) =>
+        match.replace(/^### /, ""),
+      );
+
+      subChapterTitles.forEach((subTitle) => {
+        subChapters.push({
+          title: subTitle,
+          id: generateId(subTitle),
+        });
+      });
     }
-  }
 
-  // Add any remaining content to the last chapter
-  if (currentContent.length > 0 && chapterStack.length > 0) {
-    chapterStack[chapterStack.length - 1]!.content += currentContent.join("\n");
-  }
-
-  return rootChapters;
-}
-
-export function chaptersToStructuredDocs(chapters: Chapter[]): any[] {
-  return chapters.map((chapter) => {
-    return {
-      id: chapter.id,
-      title: chapter.title,
-      description: chapter.content,
-      subchapters:
-        chapter.children.length > 0
-          ? chaptersToStructuredDocs(chapter.children)
-          : [],
-    };
+    structure.push({
+      title: chapterTitle,
+      content: chapterContent,
+      items: subChapters,
+    });
   });
-}
 
-// Updated function to parse markdown and convert to structured documentation
-export async function parseMarkdownToStructuredDocs(
-  markdownContent: string,
-): Promise<any[]> {
-  const chapters = parseMarkdownChapters(markdownContent);
-  // return chapters;
-  return chaptersToStructuredDocs(chapters);
-}
+  return structure;
+};
 
-// console.log("SS", await parseMarkdownToStructuredDocs(content));
+// --- Documentation Generation ---
+// fs.writeFileSync(outputFilePath, await generateDocumentation());
+// console.log("Documentation generated successfully at", outputFilePath);
+
+// --- Documentation Parsing ---
+// const documentationStructure = parseMarkdown(content);
+// console.log("🚀 ~ documentationStructure:", documentationStructure);

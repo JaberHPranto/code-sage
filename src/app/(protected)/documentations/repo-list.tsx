@@ -50,10 +50,7 @@ export function RepoList() {
               <Skeleton className="h-5 w-1/2" />
               <Skeleton className="h-4 w-3/4" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="mb-2 h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </CardContent>
+
             <CardFooter>
               <Skeleton className="h-10 w-full" />
             </CardFooter>
@@ -144,7 +141,7 @@ export function RepoList() {
                     asChild
                   >
                     <a
-                      href={`/docs/project/${repo.id}`}
+                      href={`/documentation/${repo.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
