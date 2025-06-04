@@ -11,17 +11,13 @@ const SidebarLayout = ({ children }: Props) => {
     <SidebarProvider>
       <AppSidebar />
       <main className="m-2 w-full">
-        <div className="border-sidebar-border bg-sidebar flex items-center gap-2 rounded-md border px-4 py-2 shadow">
-          <SidebarTrigger className="-ml-1" />
-          {/* Searchbar */}
-          <div className="ml-auto">
-            <UserButton />
+        <div className="border-sidebar-border bg-background h-[calc(100vh-1rem)] overflow-y-auto rounded-md border p-4 shadow">
+          <div className="border-sidebar-border bg-background mb-4 flex items-center gap-2 rounded-md border px-4 py-2 shadow">
+            <SidebarTrigger className="-ml-1" />
+            <div className="ml-auto">
+              <UserButton />
+            </div>
           </div>
-        </div>
-        <div className="h-4"></div>
-        {/* main content */}
-
-        <div className="border-sidebar-border bg-sidebar h-[calc(100vh-5.5rem)] overflow-y-auto rounded-md border p-4 shadow">
           {children}
         </div>
       </main>

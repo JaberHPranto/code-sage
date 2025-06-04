@@ -36,11 +36,11 @@ export async function retrieveAnswer(
   - Provide comprehensive explanations that balance technical accuracy with clarity
 
   ## Response Format
-    - **Direct Answer**: Address the specific question first
-    - **Context Summary**: Briefly explain what code/files inform this answer  
-    - **Technical Details**: Deep dive using the provided context
-    - **Related Context**: Mention relevant but not directly applicable code
-    - **Gaps**: Clearly state what's missing if context is incomplete
+    - Address the specific question first
+    - Briefly explain what code/files inform this answer  
+    - Deep dive using the provided context
+    - Mention relevant but not directly applicable code
+    - Clearly state what's missing if context is incomplete
 
   ## Source Attribution
     - Reference specific files, line numbers, or functions when quoting or explaining code

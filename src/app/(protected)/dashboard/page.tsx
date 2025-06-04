@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Github } from "lucide-react";
+import { Bug, ExternalLink, FileText, Github, Users, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import useProjects from "~/hooks/use-projects";
 import useRefetch from "~/hooks/use-refetch";
 import { api } from "~/trpc/react";
 import CommitLog from "./commit-log";
-import AskQuestionCard from "./ask-question-card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 const DashboardPage = () => {
   const [startIndexing, setStartIndexing] = useState(false);
@@ -64,6 +64,77 @@ const DashboardPage = () => {
 
   return (
     <div>
+      {/* Stats */}
+      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-gray-300">
+              Total Lines
+            </CardTitle>
+            <div className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 p-2 transition-transform duration-300 group-hover:scale-110">
+              <FileText className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-2xl font-bold text-transparent">
+              45,672
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Across all files</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-gray-300">
+              Contributors
+            </CardTitle>
+            <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-2 transition-transform duration-300 group-hover:scale-110">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-2xl font-bold text-transparent">
+              12
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Active developers</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-gray-300">
+              Open Issues
+            </CardTitle>
+            <div className="rounded-xl bg-gradient-to-r from-red-500 to-pink-500 p-2 transition-transform duration-300 group-hover:scale-110">
+              <Bug className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-2xl font-bold text-transparent">
+              23
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Needs attention</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-gray-300">
+              Performance
+            </CardTitle>
+            <div className="rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 p-2 transition-transform duration-300 group-hover:scale-110">
+              <Zap className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-2xl font-bold text-transparent">
+              Fast
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Analysis speed</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-y-4">
         {/* Github Link */}
         <div className="bg-primary flex w-fit rounded-md px-4 py-3">
@@ -114,13 +185,7 @@ const DashboardPage = () => {
           </Button>
         </div>
       )}
-      <div className="mt-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
-          {/* AskQuestion MeetingCard */}
-          <AskQuestionCard />
-        </div>
-      </div>
-      {/* && */}
+
       {startIndexing && !indexingProgress?.isFinished && (
         <div>
           <Progress

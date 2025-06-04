@@ -57,7 +57,7 @@ const AppSidebar = () => {
   const { projects, selectedProjectId, setSelectedProjectId } = useProjects();
 
   return (
-    <Sidebar collapsible="icon" variant="floating">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <div className="flex items-center gap-2">
           <Image
@@ -69,7 +69,7 @@ const AppSidebar = () => {
           />
 
           {open && (
-            <h1 className="text-primary/80 text-xl font-bold text-nowrap">
+            <h1 className="text-xl font-bold text-nowrap text-white/90">
               Code Sage
             </h1>
           )}

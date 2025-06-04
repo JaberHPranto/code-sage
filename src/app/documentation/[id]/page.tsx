@@ -59,7 +59,7 @@ export default function DocumentationPage() {
 
   function scrollToSection(sectionId: string) {
     const element = document.getElementById(sectionId);
-    const offset = 80; // Header height
+    const offset = 100; // Header height
     if (element) {
       const yOffset = -offset;
       const y =
@@ -80,16 +80,16 @@ export default function DocumentationPage() {
 
       <div className="container mx-auto flex">
         {/* Left Sidebar - Navigation */}
-        <aside className="sticky top-[72px] h-[calc(100vh-72px)] w-72 border-r border-blue-100 backdrop-blur-sm">
+        <aside className="sticky top-[86px] h-[calc(100vh-90px)] w-72 backdrop-blur-sm">
           <ScrollArea className="h-full">
             <div className="space-y-2 p-4">
               {documentationStructure.map((section, index) => (
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full items-center justify-start gap-2 font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-500",
+                    "hover:bg-primary-50 hover:text-primary-500 w-full items-center justify-start gap-2 font-medium text-gray-400",
                     {
-                      "bg-gradient-to-r from-blue-400 to-blue-500 text-white hover:from-blue-400 hover:to-blue-500 hover:text-white":
+                      "from-primary-400 to-primary-600 hover:from-primary-400 hover:to-primary-500 bg-gradient-to-r text-white hover:text-white":
                         activeSection === section.title,
                     },
                   )}
@@ -108,10 +108,11 @@ export default function DocumentationPage() {
         {/* Main Content */}
         <main className="flex-1">
           <div className="p-8">
-            <article className="prose prose-blue max-w-none">
+            <article className="prose prose-primary max-w-none">
               <div className="prose-content max-w-4xl overflow-auto leading-relaxed text-gray-700">
-                <div data-color-mode="light">
+                <div>
                   <MDEditor.Markdown
+                    className="!bg-transparent !text-white/75"
                     source={getActiveSectionDoc(activeSection)?.content || ""}
                   />
                 </div>
@@ -121,10 +122,10 @@ export default function DocumentationPage() {
         </main>
 
         {/* Right Sidebar - Table of Contents */}
-        <aside className="sticky top-[73px] h-[calc(100vh-73px)] w-72 border-l border-blue-100 bg-white/50 backdrop-blur-sm">
+        <aside className="sticky top-[86px] h-[calc(100vh-90px)] w-72 backdrop-blur-sm">
           <div className="p-4">
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-              <Hash className="h-4 w-4 text-blue-500" />
+            <h3 className="text-primary-400 mb-4 flex items-center gap-2 font-semibold">
+              <Hash className="text-primary-400 h-4 w-4" />
               On this page
             </h3>
             <div className="space-y-2">
@@ -133,21 +134,21 @@ export default function DocumentationPage() {
                   key={index}
                   id={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className="block cursor-pointer border-l-2 border-transparent py-1 pl-3 text-left text-sm text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-500"
+                  className="hover:border-primary-300 hover:text-primary-500 hover:bg-primary-50/10 block w-full cursor-pointer rounded-[4px] border-l-2 border-transparent py-1 pl-3 text-left text-sm text-gray-400/80 transition-colors"
                 >
                   {item.title}
                 </button>
               ))}
             </div>
 
-            <div className="mt-8 rounded-lg border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
+            <div className="border-primary-100 from-primary-50 mt-8 rounded-lg border bg-gradient-to-r to-indigo-50 p-4">
               <h4 className="mb-2 font-medium text-gray-900">Need Help?</h4>
               <p className="mb-3 text-sm text-gray-600">
                 Can't find what you're looking for? Try our AI assistant.
               </p>
               <Button
                 size="sm"
-                className="w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-indigo-700"
+                className="from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 w-full cursor-pointer bg-gradient-to-r"
               >
                 Ask AI Assistant
               </Button>

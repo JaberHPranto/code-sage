@@ -40,7 +40,7 @@ const QAPage = () => {
             <SheetTrigger
               onClick={() => setQuestionIndex(questions.indexOf(question))}
             >
-              <div className="flex items-center gap-4 rounded-lg border bg-white p-4 shadow">
+              <div className="bg-card/80 text-card-foreground flex items-center gap-4 rounded-lg border p-4 shadow">
                 <img
                   className="rounded-full"
                   height={32}
@@ -50,14 +50,14 @@ const QAPage = () => {
 
                 <div className="flex flex-col text-left">
                   <div className="flex items-center gap-2">
-                    <p className="line-clamp-1 text-lg font-medium text-gray-700">
+                    <p className="line-clamp-1 text-lg font-medium text-gray-300">
                       {question.question}
                     </p>
                     <span className="text-xs whitespace-nowrap text-gray-400">
                       {question.createdAt.toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="line-clamp-1 text-sm text-gray-500">
+                  <p className="line-clamp-1 text-sm text-gray-400">
                     {question.answer}
                   </p>
                 </div>
@@ -68,12 +68,15 @@ const QAPage = () => {
       </div>
 
       {selectedQuestion && (
-        <SheetContent className="overflow-auto p-4 sm:max-w-[60vw]">
+        <SheetContent className="bg-background overflow-auto p-4 sm:max-w-[60vw]">
           <SheetHeader>
             <SheetTitle>{selectedQuestion.question}</SheetTitle>
           </SheetHeader>
-          <div data-color-mode="light">
-            <MDEditor.Markdown source={selectedQuestion.answer} />
+          <div data-color-mode="dark">
+            <MDEditor.Markdown
+              source={selectedQuestion.answer}
+              className="!bg-transparent"
+            />
           </div>
           <CodeReferences
             fileReferences={(selectedQuestion.fileReferences ?? []) as any}

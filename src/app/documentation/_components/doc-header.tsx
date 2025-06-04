@@ -8,12 +8,12 @@ interface Props {
 
 export const DocHeader = ({ setSearchOpen }: Props) => {
   return (
-    <header className="sticky top-0 z-40 border-b border-blue-100 bg-white/80 backdrop-blur-sm">
+    <header className="bg-background/50 sticky top-4 z-40 container mx-auto mt-4 rounded-2xl border backdrop-blur-sm">
       <div className="container mx-auto flex items-center justify-between px-6 py-4">
         <Link href="/dashboard">
           <div className="flex items-center gap-4">
             <img src="/logo.png" alt="logo" width={32} height={32} />
-            <h1 className="text-primary/80 -ml-2 text-lg font-bold text-nowrap">
+            <h1 className="-ml-2 text-lg font-bold text-nowrap text-white/90">
               Code Sage
             </h1>
           </div>
@@ -21,12 +21,12 @@ export const DocHeader = ({ setSearchOpen }: Props) => {
 
         <Button
           variant="outline"
-          className="gap-2 border-blue-200 hover:border-blue-300"
+          className="border-primary-300 hover:border-primary-300"
           onClick={() => setSearchOpen(true)}
         >
           <Search className="h-4 w-4" />
-          <span className="mr-8 hidden sm:inline">Search docs...</span>
-          <div className="ml-2 hidden items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 sm:flex">
+          <span className="mr-16 hidden sm:inline">Search docs...</span>
+          <div className="ml-2 hidden items-center gap-1 rounded bg-gray-700 px-1.5 py-0.5 text-xs text-gray-500 sm:flex">
             <Command className="h-3 w-3" />
             <span>K</span>
           </div>

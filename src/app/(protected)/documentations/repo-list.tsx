@@ -91,7 +91,7 @@ export function RepoList() {
         {repositories.map((repo, index) => (
           <Card
             key={repo.id}
-            className="group border-l-primary/20 hover:border-l-primary/60 border-l-4 p-4 transition-all duration-200 hover:shadow-sm"
+            className="group border-l-primary/20 hover:border-l-primary/60 border-l-4 p-4 shadow-sm transition-all duration-200 hover:shadow-sm"
           >
             <div className="space-y-3">
               {/* Header with repo name and status */}

@@ -21,12 +21,12 @@ const CodeReferences = ({ fileReferences }: Props) => {
   return (
     <div>
       <Tabs value={tab} onValueChange={setTab}>
-        <div className="flex gap-2 overflow-auto rounded-md bg-gray-200 p-1">
+        <div className="bg-card flex gap-2 overflow-auto rounded-md p-1">
           {fileReferences.map((file) => (
             <button
               key={file.fileName}
               className={cn(
-                "text-mutated-foreground rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                "text-mutated-foreground cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
                 {
                   "bg-primary text-primary-foreground": tab === file.fileName,
                 },
