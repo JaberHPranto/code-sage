@@ -5,7 +5,6 @@ import {
   CreditCard,
   LayoutDashboard,
   Plus,
-  Presentation,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,7 +23,6 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import useProjects from "~/hooks/use-projects";
-import useRefetch from "~/hooks/use-refetch";
 import { cn } from "~/lib/utils";
 
 const items = [

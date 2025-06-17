@@ -1,6 +1,6 @@
 "use client";
 
-import { Bug, ExternalLink, FileText, Github, Users, Zap } from "lucide-react";
+import { ExternalLink, Github } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,8 +9,10 @@ import { Progress } from "~/components/ui/progress";
 import useProjects from "~/hooks/use-projects";
 import useRefetch from "~/hooks/use-refetch";
 import { api } from "~/trpc/react";
-import CommitLog from "./commit-log";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Analytics } from "./analytics";
+import { CommitLog } from "./commit-log";
+import { Card, CardContent } from "~/components/ui/card";
+import { extractGitHubPath } from "~/utils/helper";
 
 const DashboardPage = () => {
   const [startIndexing, setStartIndexing] = useState(false);
@@ -52,7 +54,7 @@ const DashboardPage = () => {
           repoUrl: selectedProject.repoUrl,
         },
         {
-          onSuccess(data, variables, context) {
+          onSuccess() {
             setStartIndexing(false);
             toast.success("Repo indexing started successfully");
             refetch();
@@ -64,104 +66,48 @@ const DashboardPage = () => {
 
   return (
     <div>
-      {/* Stats */}
-      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">
-              Total Lines
-            </CardTitle>
-            <div className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 p-2 transition-transform duration-300 group-hover:scale-110">
-              <FileText className="h-4 w-4 text-white" />
+      <div className="flex flex-wrap items-center justify-between gap-y-4 px-4">
+        <Card className="my-2 w-full border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10 backdrop-blur-sm">
+          <CardContent className="px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="rounded-xl bg-orange-500/20 p-3">
+                  <Github className="h-6 w-6 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="mb-1 font-semibold text-white">
+                    Repository Connected
+                  </h3>
+                  <p className="text-sm text-slate-300">
+                    This project is linked to{" "}
+                    <span className="ml-1 font-medium text-orange-400">
+                      {selectedProject?.repoUrl
+                        ? extractGitHubPath(selectedProject.repoUrl)
+                        : ""}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={selectedProject ? selectedProject.repoUrl : "#"}
+                className="flex items-center gap-1 rounded-sm border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm text-orange-400 hover:bg-orange-500/20"
+                target="_blank"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View Repo
+              </Link>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-2xl font-bold text-transparent">
-              45,672
-            </div>
-            <p className="mt-1 text-xs text-gray-400">Across all files</p>
           </CardContent>
         </Card>
-
-        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">
-              Contributors
-            </CardTitle>
-            <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-2 transition-transform duration-300 group-hover:scale-110">
-              <Users className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-2xl font-bold text-transparent">
-              12
-            </div>
-            <p className="mt-1 text-xs text-gray-400">Active developers</p>
-          </CardContent>
-        </Card>
-
-        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">
-              Open Issues
-            </CardTitle>
-            <div className="rounded-xl bg-gradient-to-r from-red-500 to-pink-500 p-2 transition-transform duration-300 group-hover:scale-110">
-              <Bug className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-2xl font-bold text-transparent">
-              23
-            </div>
-            <p className="mt-1 text-xs text-gray-400">Needs attention</p>
-          </CardContent>
-        </Card>
-
-        <Card className="group gap-3 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:bg-black/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">
-              Performance
-            </CardTitle>
-            <div className="rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 p-2 transition-transform duration-300 group-hover:scale-110">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-2xl font-bold text-transparent">
-              Fast
-            </div>
-            <p className="mt-1 text-xs text-gray-400">Analysis speed</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-y-4">
-        {/* Github Link */}
-        <div className="bg-primary flex w-fit rounded-md px-4 py-3">
-          <div className="flex items-center">
-            <Github className="size-5 text-white" />
-            <div className="ml-2">
-              <p className="text-sm font-medium text-white">
-                {" "}
-                This project is linked to{" "}
-                <Link
-                  href={selectedProject?.repoUrl ?? "#"}
-                  target="_blank"
-                  className="inline-flex items-center text-white/80 hover:underline"
-                >
-                  {selectedProject?.repoUrl}{" "}
-                  <ExternalLink className="ml-1 size-4" />
-                </Link>
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Team Members */}
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4">
           Team Members InviteButton ArchiveButton
-        </div>
+        </div> */}
       </div>
+
+      <Analytics />
+      {/* 
       {isIndexingFinished && (
         <div className="my-8">
           <p className="text-muted-foreground text-center text-sm">
@@ -172,7 +118,7 @@ const DashboardPage = () => {
             has been indexed successfully.
           </p>
         </div>
-      )}
+      )} */}
       {!isIndexingFinished && (
         <div className="">
           <Button
@@ -203,7 +149,7 @@ const DashboardPage = () => {
           </p>
         </div>
       )}
-      <div className="mt-8">
+      <div>
         <CommitLog />
       </div>
     </div>

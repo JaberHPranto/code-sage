@@ -12,3 +12,11 @@ export const formatTimeAgo = (dateString: string) => {
   if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`;
   return `${Math.floor(diffInDays / 365)} years ago`;
 };
+
+export function extractGitHubPath(url: string): string {
+  const prefix = "https://github.com/";
+  if (url.startsWith(prefix)) {
+    return url.slice(prefix.length);
+  }
+  return url;
+}

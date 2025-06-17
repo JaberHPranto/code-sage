@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { formatTimeAgo } from "~/utils/helper";
 
-const CommitLog = () => {
+export const CommitLog = () => {
   const { selectedProjectId, selectedProject } = useProjects();
   const { data: commits } = api.project.getCommits.useQuery({
     projectId: selectedProjectId,
@@ -101,4 +101,3 @@ const CommitLog = () => {
     </>
   );
 };
-export default CommitLog;
